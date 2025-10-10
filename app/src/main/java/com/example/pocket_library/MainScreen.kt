@@ -1,5 +1,6 @@
 package com.example.pocket_library
 
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,13 +21,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.search
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.pocket_library.ui.theme.PocketLibraryTheme
 
 @Composable
@@ -72,8 +73,8 @@ fun MainScreen(vm: BookViewModel = viewModel()) {
                         items(state.results) { hit ->
                             Card(Modifier.aspectRatio(1f)) {
                                 AsyncImage(
-                                    model = hit.webUrl,
-                                    contentDescription = hit.tags,
+                                    model = hit.getCoverImage("M"),
+                                    contentDescription = "Xxx",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
                                 )
