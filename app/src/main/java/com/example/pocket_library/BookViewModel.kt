@@ -1,6 +1,5 @@
 package com.example.pocket_library
 
-import android.net.Network
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -43,10 +42,8 @@ class BookViewModel : ViewModel() {
         viewModelScope.launch {
             _state.value = _state.value.copy(loading = true, error = null)
             try {
-                val resp = Network.api.searchImages(
-                    apiKey = "23319229-94b52a4727158e1dc3fd5f2db",
-                    query = q,
-                    perPage = 30
+                val resp = Network.api.searchBooks(
+                    query = q
                 )
                 _state.value = _state.value.copy(results = resp.hits, loading = false)
             } catch (t: Throwable) {

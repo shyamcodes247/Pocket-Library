@@ -24,10 +24,14 @@ import androidx.compose.runtime.search
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pocket_library.ui.theme.PocketLibraryTheme
 
 @Composable
 fun MainScreen(vm: BookViewModel = viewModel()) {
+    val state by vm.state.collectAsState()
 
     Column(Modifier.fillMaxSize().padding(16.dp)) {
         OutlinedTextField(
@@ -79,5 +83,13 @@ fun MainScreen(vm: BookViewModel = viewModel()) {
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MainScreenPreview() {
+    PocketLibraryTheme {
+        MainScreen()
     }
 }
