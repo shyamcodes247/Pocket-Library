@@ -28,69 +28,40 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.example.pocket_library.ui.theme.PocketLibraryTheme
 
 @Composable
 fun MainScreen(vm: BookViewModel = viewModel()) {
     val state by vm.state.collectAsState()
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(0.dp, 16.dp, 0.dp, 0.dp)
+    ) {
         OutlinedTextField(
             value = state.query,
             onValueChange = vm::updateQuery,
             label = { Text("Search Pocket Library") },
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp, 0.dp),
             keyboardActions = androidx.compose.foundation.text.KeyboardActions(
                 onSearch = { vm.search() })
         )
 
         Spacer(Modifier.height(12.dp))
-
-        Box(Modifier.fillMaxSize()) {
-            when {
-                state.loading -> {
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-                }
-                state.error != null -> {
-                    Text(
-                        text = state.error ?: "Error",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                state.results.isEmpty() && state.query.isNotEmpty() -> {
-                    Text("No results", modifier = Modifier.align(Alignment.Center))
-                }
-                else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(140.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp)
-                    ) {
-                        items(state.results) { hit ->
-                            Card(Modifier.aspectRatio(1f)) {
-                                AsyncImage(
-                                    model = hit.getCoverImage("M"),
-                                    contentDescription = "Xxx",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+        Box(modifier = Modifier.weight(1f)) {
+            BookList(state = state)
         }
+
+        NavBar(modifier = Modifier, vm)
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
-    PocketLibraryTheme {
-        MainScreen()
-    }
+    val vm: BookViewModel = viewModel()
+    MainScreen(vm)
 }
