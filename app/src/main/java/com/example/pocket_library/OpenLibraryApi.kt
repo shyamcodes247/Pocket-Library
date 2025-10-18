@@ -5,27 +5,35 @@ import retrofit2.http.Query
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import retrofit2.http.Path
 
 interface OpenLibraryApi {
     @GET("/search.json")
-    suspend fun searchImages(
-        @Query("q") query: String
+    suspend fun searchBooks(
+        @Query("q") query: String,
+        @Query("limit") limit: Int = 20
     ): OpenLibraryResponse
 }
 
 @JsonClass(generateAdapter = true)
 data class OpenLibraryResponse(
-    val total: Int,
-    val totalHits: Int,
-    val hits: List<Hit>
+    @Json(name = "num_found") val total: Int,
+    @Json(name = "docs") val hits: List<Hit>
 )
 
 @JsonClass(generateAdapter = true)
 data class Hit(
-    val id: Int,
-    @Json(name = "previewURL") val previewUrl: String,
-    @Json(name = "webformatURL") val webUrl: String,
-    @Json(name = "largeImageURL") val largeUrl: String,
-    val tags: String
-)
+    @Json(name = "title") val title: String? = null,
+    @Json(name = "author_name") val authorName: List<String>? = null,
+    @Json(name = "first_publish_year") val firstPublicYear: Int? = null,
+    @Json(name = "cover_i") val coverId: Int? = null
+) {
+    fun getCoverImage(size: String): String? {
+        coverId?.let {
+            return "https://covers.openlibrary.org/b/id/$it-$size.jpg"
+        }
+
+        return null
+    }
+}
 
