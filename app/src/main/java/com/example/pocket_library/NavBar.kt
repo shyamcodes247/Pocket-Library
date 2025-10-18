@@ -30,7 +30,7 @@ fun NavBar(modifier: Modifier = Modifier, vm: BookViewModel = viewModel()) {
         horizontalArrangement = Arrangement.SpaceAround
     ) {
         Button(
-            onClick = {},
+            onClick = {vm.screen = 0},
             colors = ButtonDefaults.buttonColors(Color.LightGray),
             modifier = Modifier.padding(8.dp)
         ) {
@@ -41,7 +41,7 @@ fun NavBar(modifier: Modifier = Modifier, vm: BookViewModel = viewModel()) {
         }
 
         Button(
-            onClick = {},
+            onClick = {vm.screen = 1},
             colors = ButtonDefaults.buttonColors(Color.LightGray),
             modifier = Modifier.padding(8.dp)
         ) {

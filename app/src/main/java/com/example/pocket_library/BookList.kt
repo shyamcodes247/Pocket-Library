@@ -1,6 +1,6 @@
 package com.example.pocket_library
 
-import androidx.compose.foundation.background
+import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,15 +24,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material3.IconButton
 
 @Composable
-fun BookList(state: UiState) {
+fun BookList(state: UiState, vm: BookViewModel) {
+
     Box(
         Modifier
             .padding(16.dp, 0.dp)
@@ -69,14 +73,31 @@ fun BookList(state: UiState) {
                             )
                         ) {
                             Column(Modifier.fillMaxSize()) {
-                                AsyncImage(
-                                    model = hit.getCoverImage("S"),
-                                    contentDescription = "Cover Image",
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .weight(4f)
-                                )
+
+                                Box(
+                                    modifier = Modifier.weight(4f)
+                                ) {
+
+                                    val book: Book = Book(hit.coverId, hit.authorName?.firstOrNull(), hit.title, hit.firstPublicYear,hit.getCoverImage("S"))
+
+                                    AsyncImage(
+                                        model = hit.getCoverImage("S"),
+                                        contentDescription = "Cover Image",
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+
+                                    IconButton(
+                                        onClick = { if (vm.isFavourite(book)) vm.removeFavourite(book) else vm.addFavourite(book) },
+                                        modifier = Modifier.align(Alignment.TopEnd)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (vm.isFavourite(book)) Icons.Filled.Favorite else Icons.Outlined.Favorite,
+                                            contentDescription = "Favourite Button"
+                                        )
+                                    }
+
+                                }
 
                                 Text(
                                     text = "${hit.title ?: "No title"}",
@@ -118,6 +139,6 @@ fun BookList(state: UiState) {
 fun BookListPreview() {
     val vm: BookViewModel = viewModel()
     val state by vm.state.collectAsState()
-    BookList(state)
+    BookList(state, vm)
 }
 

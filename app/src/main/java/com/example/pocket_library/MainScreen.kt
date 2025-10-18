@@ -51,7 +51,7 @@ fun MainScreen(vm: BookViewModel = viewModel()) {
 
         Spacer(Modifier.height(12.dp))
         Box(modifier = Modifier.weight(1f)) {
-            BookList(state = state)
+            BookList(state = state, vm)
         }
 
         NavBar(modifier = Modifier, vm)

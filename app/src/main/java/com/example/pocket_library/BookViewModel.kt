@@ -1,5 +1,8 @@
 package com.example.pocket_library
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -15,10 +18,23 @@ data class UiState(
     val results: List<Hit> = emptyList()
 )
 
+data class Book(
+    val id: Int? = null,
+    val author: String? = null,
+    val title: String? = null,
+    val year: Int? = null,
+    val image: String? = null
+)
+
 class BookViewModel : ViewModel() {
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
+    private val _favourites = MutableStateFlow<List<Book>>(emptyList())
+
+    val favourites: StateFlow<List<Book>> = _favourites
+
+    var screen by mutableStateOf(0)
     private var searchJob: Job? = null
 
     fun updateQuery(q: String) {
@@ -54,4 +70,18 @@ class BookViewModel : ViewModel() {
             }
         }
     }
+
+    // Functions for favouriting books
+    fun addFavourite(book: Book) {
+        _favourites.value = _favourites.value + book
+    }
+
+    fun removeFavourite(book: Book) {
+        _favourites.value = _favourites.value.filter {it.id != book.id}
+    }
+
+    fun isFavourite(book: Book): Boolean {
+        return _favourites.value.any { it.id == book.id }
+    }
+
 }

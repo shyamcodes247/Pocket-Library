@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pocket_library.ui.theme.PocketLibraryTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,8 +19,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val vm: BookViewModel = viewModel()
             PocketLibraryTheme {
-                MainScreen()
+                if (vm.screen == 0) {
+                    MainScreen(vm)
+                } else if (vm.screen == 1){
+                    FavouriteScreen(vm)
+                }
             }
         }
     }
