@@ -52,7 +52,7 @@ fun NavBar(modifier: Modifier = Modifier, vm: BookViewModel = viewModel()) {
         }
 
         Button(
-            onClick = {},
+            onClick = {vm.screen = 2},
             colors = ButtonDefaults.buttonColors(Color.LightGray),
             modifier = Modifier.padding(8.dp)
         ) {
