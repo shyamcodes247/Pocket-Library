@@ -1,5 +1,7 @@
 package com.example.pocket_library
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,9 +34,14 @@ import coil.compose.AsyncImage
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 
 @Composable
 fun BookList(state: UiState, vm: BookViewModel) {
+    val saved by vm.saved.collectAsState()
+    val favourites by vm.favourites.collectAsState()
 
     Box(
         Modifier
@@ -80,6 +87,9 @@ fun BookList(state: UiState, vm: BookViewModel) {
 
                                     val book: Book = Book(hit.coverId, hit.authorName?.firstOrNull(), hit.title, hit.firstPublicYear,hit.getCoverImage("S"))
 
+                                    val isSaved = saved.contains(book)
+                                    val isFavourite = favourites.contains(book)
+
                                     AsyncImage(
                                         model = hit.getCoverImage("S"),
                                         contentDescription = "Cover Image",
@@ -88,11 +98,21 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                     )
 
                                     IconButton(
-                                        onClick = { if (vm.isFavourite(book)) vm.removeFavourite(book) else vm.addFavourite(book) },
+                                        onClick = { if (isSaved) vm.removeSavedBook(book) else vm.addSavedBook(book) },
+                                        modifier = Modifier.align(Alignment.TopStart)
+                                    ) {
+                                        Icon(
+                                            painter = if (isSaved) painterResource(R.drawable.bookmark_icon) else painterResource(R.drawable.bookmark_border_icon),
+                                            contentDescription = "Favourite Button"
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = { if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(book) },
                                         modifier = Modifier.align(Alignment.TopEnd)
                                     ) {
                                         Icon(
-                                            imageVector = if (vm.isFavourite(book)) Icons.Filled.Favorite else Icons.Outlined.Favorite,
+                                            painter = if (isFavourite) painterResource(R.drawable.favourite_icon) else painterResource(R.drawable.favourite_outline_icon),
                                             contentDescription = "Favourite Button"
                                         )
                                     }

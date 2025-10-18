@@ -1,10 +1,14 @@
 package com.example.pocket_library
 
+import android.content.ContentValues.TAG
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +23,7 @@ data class UiState(
 )
 
 data class Book(
-    val id: Int? = null,
+    var id: Int? = null,
     val author: String? = null,
     val title: String? = null,
     val year: Int? = null,
@@ -27,12 +31,22 @@ data class Book(
 )
 
 class BookViewModel : ViewModel() {
+    private val db = Firebase.firestore
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
     private val _favourites = MutableStateFlow<List<Book>>(emptyList())
 
     val favourites: StateFlow<List<Book>> = _favourites
+
+    private val _saved = MutableStateFlow<List<Book>>(emptyList())
+
+    val saved: StateFlow<List<Book>> = _saved
+
+    init {
+        getFavourites()
+        getSavedBooks()
+    }
 
     var screen by mutableStateOf(0)
     private var searchJob: Job? = null
@@ -73,15 +87,82 @@ class BookViewModel : ViewModel() {
 
     // Functions for favouriting books
     fun addFavourite(book: Book) {
+        db.collection("favourites")
+            .add(book)
+            .addOnSuccessListener { bookRef ->
+                Log.d("BookViewModel", "Book added with id: ${bookRef.id}")
+                book.id = bookRef.id.toInt()
+            }
+            .addOnFailureListener { e ->
+                Log.w("BookViewModel", "Error adding book ", e)
+            }
+
         _favourites.value = _favourites.value + book
     }
 
     fun removeFavourite(book: Book) {
+        db.collection("favourites")
+            .document(book.id.toString())
+            .delete()
+            .addOnSuccessListener {
+                Log.d("BookViewModel", "Book successfully deleted!")
+            }
+            .addOnFailureListener { e ->
+                Log.w("BookViewModel", "Error deleting book", e)
+            }
+
         _favourites.value = _favourites.value.filter {it.id != book.id}
     }
 
-    fun isFavourite(book: Book): Boolean {
-        return _favourites.value.any { it.id == book.id }
+    fun addSavedBook(book: Book) {
+        db.collection("saved")
+            .add(book)
+            .addOnSuccessListener { bookRef ->
+                Log.d(TAG, "Book added with id: ${bookRef.id}")
+                book.id = bookRef.id.toInt()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Error adding book ", e)
+            }
+
+        _saved.value = _saved.value + book
     }
 
+    fun removeSavedBook(book: Book) {
+        db.collection("saved")
+            .document(book.id.toString())  // bookId is the Firestore document ID
+            .delete()
+            .addOnSuccessListener {
+                Log.d("BookViewModel", "Saved book successfully deleted!")
+            }
+            .addOnFailureListener { e ->
+                Log.w("BookViewModel", "Error deleting book", e)
+            }
+
+        _saved.value = _saved.value.filter {it.id != book.id}
+    }
+
+    fun getFavourites() {
+        db.collection("favourites")
+            .get()
+            .addOnSuccessListener { result ->
+                val list = result.documents.mapNotNull { it.toObject(Book::class.java) }
+                _favourites.value = list
+            }
+            .addOnFailureListener { e ->
+                Log.e("BookViewModel", "Error fetching books", e)
+            }
+    }
+
+    fun getSavedBooks() {
+        db.collection("saved")
+            .get()
+            .addOnSuccessListener { result ->
+                val list = result.documents.mapNotNull { it.toObject(Book::class.java) }
+                _saved.value = list
+            }
+            .addOnFailureListener { e ->
+                Log.e("BookViewModel", "Error fetching books", e)
+            }
+    }
 }

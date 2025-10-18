@@ -12,9 +12,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,10 +25,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 
 @Composable
 fun FavouriteScreen(vm: BookViewModel = viewModel()) {
@@ -69,6 +69,7 @@ fun FavouriteScreen(vm: BookViewModel = viewModel()) {
                             Box(
                                 modifier = Modifier.weight(4f)
                             ) {
+                                val isFavourite = favourites.contains(book)
 
                                 AsyncImage(
                                     model = book.image,
@@ -78,15 +79,11 @@ fun FavouriteScreen(vm: BookViewModel = viewModel()) {
                                 )
 
                                 IconButton(
-                                    onClick = {
-                                        if (vm.isFavourite(book)) vm.removeFavourite(book) else vm.addFavourite(
-                                            book
-                                        )
-                                    },
+                                    onClick = { if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(book) },
                                     modifier = Modifier.align(Alignment.TopEnd)
                                 ) {
                                     Icon(
-                                        imageVector = if (vm.isFavourite(book)) Icons.Filled.Favorite else Icons.Outlined.Favorite,
+                                        painter = if (isFavourite) painterResource(R.drawable.favourite_icon) else painterResource(R.drawable.favourite_outline_icon),
                                         contentDescription = "Favourite Button"
                                     )
                                 }
