@@ -44,6 +44,11 @@ class BookViewModel : ViewModel() {
 
     val saved: StateFlow<List<Book>> = _saved
 
+    private val _selectedBook = MutableStateFlow<Book?>(null)
+
+    val selectedBook: StateFlow<Book?> = _selectedBook
+
+
     init {
         getFavourites()
         getSavedBooks()
@@ -165,5 +170,9 @@ class BookViewModel : ViewModel() {
             .addOnFailureListener { e ->
                 Log.e("BookViewModel", "Error fetching books", e)
             }
+    }
+
+    fun selectBook(book: Book) {
+        _selectedBook.value = book
     }
 }
