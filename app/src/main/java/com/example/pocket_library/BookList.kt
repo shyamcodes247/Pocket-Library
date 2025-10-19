@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -45,10 +46,15 @@ fun BookList(state: UiState, vm: BookViewModel) {
     val saved by vm.saved.collectAsState()
     val favourites by vm.favourites.collectAsState()
 
-    Box(
+    BoxWithConstraints(
         Modifier
             .padding(16.dp, 0.dp)
     ) {
+        val cardRatio = if (maxWidth < 360.dp) 1f else 2f/3f
+        val fontSize = if (maxWidth < 360.dp) 10.sp else 12.sp
+        val iconSize = if (maxWidth < 360.dp) 16.dp else 24.dp
+        val boxSize = if (maxHeight < 600.dp) 3f else 4f
+
         when {
             state.loading -> {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -75,8 +81,10 @@ fun BookList(state: UiState, vm: BookViewModel) {
                     contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(state.results) { hit ->
+
                         Card(Modifier
-                            .aspectRatio(2f/3f),
+                            .aspectRatio(cardRatio)
+                            .wrapContentHeight(),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.background
                             )
@@ -84,7 +92,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                             Column(Modifier.fillMaxSize()) {
 
                                 Box(
-                                    modifier = Modifier.weight(4f)
+                                    modifier = Modifier.weight(boxSize)
                                 ) {
 
                                     val book: Book = Book(hit.coverId.toString(), hit.authorName?.firstOrNull(), hit.title, hit.firstPublicYear,hit.getCoverImage("S"))
@@ -101,7 +109,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
 
                                     IconButton(
                                         onClick = { if (isSaved) vm.removeSavedBook(book) else vm.addSavedBook(book) },
-                                        modifier = Modifier.align(Alignment.TopStart)
+                                        modifier = Modifier.align(Alignment.TopStart).size(iconSize)
                                     ) {
                                         Icon(
                                             painter = if (isSaved) painterResource(R.drawable.bookmark_icon) else painterResource(R.drawable.bookmark_border_icon),
@@ -111,7 +119,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
 
                                     IconButton(
                                         onClick = { if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(book) },
-                                        modifier = Modifier.align(Alignment.TopEnd)
+                                        modifier = Modifier.align(Alignment.TopEnd).size(iconSize)
                                     ) {
                                         Icon(
                                             painter = if (isFavourite) painterResource(R.drawable.favourite_icon) else painterResource(R.drawable.favourite_outline_icon),
@@ -125,27 +133,30 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                     text = "${hit.title ?: "No title"}",
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .weight(1f)
+                                        .wrapContentHeight()
                                         .align(Alignment.CenterHorizontally),
-                                    fontSize = 12.sp
+                                    maxLines = 2,
+                                    fontSize = fontSize
                                 )
 
                                 Text(
                                     text = "${hit.authorName?.firstOrNull() ?: "No title"}",
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .weight(1f)
+                                        .wrapContentHeight()
                                         .align(Alignment.CenterHorizontally),
-                                    fontSize = 12.sp
+                                    maxLines = 1,
+                                    fontSize = fontSize
                                 )
 
                                 Text(
                                     text = "${hit.firstPublicYear ?: "No title"}",
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .weight(1f)
+                                        .wrapContentHeight()
                                         .align(Alignment.CenterHorizontally),
-                                    fontSize = 12.sp
+                                    maxLines = 1,
+                                    fontSize = fontSize
                                 )
                             }
                         }
