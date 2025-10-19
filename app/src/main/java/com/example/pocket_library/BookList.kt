@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.sp
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 
@@ -85,7 +87,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                     modifier = Modifier.weight(4f)
                                 ) {
 
-                                    val book: Book = Book(hit.coverId, hit.authorName?.firstOrNull(), hit.title, hit.firstPublicYear,hit.getCoverImage("S"))
+                                    val book: Book = Book(hit.coverId.toString(), hit.authorName?.firstOrNull(), hit.title, hit.firstPublicYear,hit.getCoverImage("S"))
 
                                     val isSaved = saved.contains(book)
                                     val isFavourite = favourites.contains(book)
@@ -124,8 +126,8 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .weight(1f)
-                                        .align(Alignment.CenterHorizontally)
-                                        .size(8.dp)
+                                        .align(Alignment.CenterHorizontally),
+                                    fontSize = 12.sp
                                 )
 
                                 Text(
@@ -133,8 +135,8 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .weight(1f)
-                                        .align(Alignment.CenterHorizontally)
-                                        .size(8.dp)
+                                        .align(Alignment.CenterHorizontally),
+                                    fontSize = 12.sp
                                 )
 
                                 Text(
@@ -142,8 +144,8 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .weight(1f)
-                                        .align(Alignment.CenterHorizontally)
-                                        .size(8.dp)
+                                        .align(Alignment.CenterHorizontally),
+                                    fontSize = 12.sp
                                 )
                             }
                         }

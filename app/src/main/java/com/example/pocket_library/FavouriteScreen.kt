@@ -28,6 +28,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.google.firebase.Firebase
@@ -95,8 +96,8 @@ fun FavouriteScreen(vm: BookViewModel = viewModel()) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f)
-                                    .align(Alignment.CenterHorizontally)
-                                    .size(8.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                fontSize = 12.sp
                             )
 
                             Text(
@@ -104,8 +105,8 @@ fun FavouriteScreen(vm: BookViewModel = viewModel()) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f)
-                                    .align(Alignment.CenterHorizontally)
-                                    .size(8.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                fontSize = 12.sp
                             )
 
                             Text(
@@ -113,8 +114,8 @@ fun FavouriteScreen(vm: BookViewModel = viewModel()) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .weight(1f)
-                                    .align(Alignment.CenterHorizontally)
-                                    .size(8.dp)
+                                    .align(Alignment.CenterHorizontally),
+                                fontSize = 12.sp
                             )
                         }
                     }
