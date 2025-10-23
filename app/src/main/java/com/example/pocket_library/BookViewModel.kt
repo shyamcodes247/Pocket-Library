@@ -32,6 +32,7 @@ data class Book(
 )
 
 class BookViewModel : ViewModel() {
+    // Initialising firestore
     private val db = Firebase.firestore
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
@@ -48,6 +49,14 @@ class BookViewModel : ViewModel() {
 
     val selectedBook: StateFlow<Book?> = _selectedBook
 
+    private val _favouriteSelectBook = MutableStateFlow<Book?>(null)
+
+    val favouriteSelectBook: StateFlow<Book?> = _favouriteSelectBook
+
+    private val _savedSelectBook = MutableStateFlow<Book?>(null)
+
+    val savedSelectBook: StateFlow<Book?> = _savedSelectBook
+
 
     init {
         getFavourites()
@@ -57,6 +66,7 @@ class BookViewModel : ViewModel() {
     var screen by mutableStateOf(0)
     private var searchJob: Job? = null
 
+    // Searching functions for implementing searching for books
     fun updateQuery(q: String) {
         _state.value = _state.value.copy(query = q)
         // Simple debounce:
@@ -106,6 +116,7 @@ class BookViewModel : ViewModel() {
         _favourites.value = _favourites.value + book
     }
 
+    // Function for removing favourited book from firestore
     fun removeFavourite(book: Book) {
         db.collection("favourites")
             .document(book.id.toString())
@@ -120,6 +131,7 @@ class BookViewModel : ViewModel() {
         _favourites.value = _favourites.value.filter {it.id != book.id}
     }
 
+    // Function for saving a book (as saved) to firestore
     fun addSavedBook(book: Book) {
         db.collection("saved")
             .add(book)
@@ -134,6 +146,7 @@ class BookViewModel : ViewModel() {
         _saved.value = _saved.value + book
     }
 
+    // Removing saved book from firestore
     fun removeSavedBook(book: Book) {
         db.collection("saved")
             .document(book.id.toString())  // bookId is the Firestore document ID
@@ -148,6 +161,7 @@ class BookViewModel : ViewModel() {
         _saved.value = _saved.value.filter {it.id != book.id}
     }
 
+    // Function for getting favourited books to firestore
     fun getFavourites() {
         db.collection("favourites")
             .get()
@@ -160,6 +174,7 @@ class BookViewModel : ViewModel() {
             }
     }
 
+    // Function for getting saved books to firestore
     fun getSavedBooks() {
         db.collection("saved")
             .get()
@@ -172,7 +187,18 @@ class BookViewModel : ViewModel() {
             }
     }
 
+    // Function for selecting a book to view on tablet
     fun selectBook(book: Book) {
         _selectedBook.value = book
+    }
+
+    // Function for selecting a favourite book to view on tablet
+    fun selectFavouriteBook(book: Book) {
+        _favouriteSelectBook.value = book
+    }
+
+    // Function for selecting a saved book to view on tablet
+    fun selectSavedBook(book: Book) {
+        _savedSelectBook.value = book
     }
 }
