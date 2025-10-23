@@ -4,6 +4,7 @@ import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -23,7 +24,7 @@ data class UiState(
 )
 
 data class Book(
-    var id: Int? = null,
+    var id: String? = " ",
     val author: String? = null,
     val title: String? = null,
     val year: Int? = null,
@@ -42,6 +43,11 @@ class BookViewModel : ViewModel() {
     private val _saved = MutableStateFlow<List<Book>>(emptyList())
 
     val saved: StateFlow<List<Book>> = _saved
+
+    private val _selectedBook = MutableStateFlow<Book?>(null)
+
+    val selectedBook: StateFlow<Book?> = _selectedBook
+
 
     init {
         getFavourites()
@@ -91,7 +97,7 @@ class BookViewModel : ViewModel() {
             .add(book)
             .addOnSuccessListener { bookRef ->
                 Log.d("BookViewModel", "Book added with id: ${bookRef.id}")
-                book.id = bookRef.id.toInt()
+                book.id = bookRef.id
             }
             .addOnFailureListener { e ->
                 Log.w("BookViewModel", "Error adding book ", e)
@@ -119,7 +125,7 @@ class BookViewModel : ViewModel() {
             .add(book)
             .addOnSuccessListener { bookRef ->
                 Log.d(TAG, "Book added with id: ${bookRef.id}")
-                book.id = bookRef.id.toInt()
+                book.id = bookRef.id
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Error adding book ", e)
@@ -164,5 +170,9 @@ class BookViewModel : ViewModel() {
             .addOnFailureListener { e ->
                 Log.e("BookViewModel", "Error fetching books", e)
             }
+    }
+
+    fun selectBook(book: Book) {
+        _selectedBook.value = book
     }
 }

@@ -44,6 +44,7 @@ android {
 
 dependencies {
     implementation("com.google.firebase:firebase-analytics")
+    implementation(libs.androidx.foundation)
 
     val moshi_version = "1.15.1"
 

@@ -4,6 +4,7 @@ import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -46,6 +48,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -77,11 +80,15 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
             dialogScreen(onDismissRequest = { showDialog = false }, vm)
         }
 
-        Box(
+        BoxWithConstraints(
             Modifier
                 .padding(16.dp, 0.dp)
                 .weight(1f)
         ) {
+            val cardRatio = if (maxWidth < 360.dp) 1f else 2f/3f
+            val fontSize = if (maxWidth < 360.dp) 10.sp else 12.sp
+            val iconSize = if (maxWidth < 360.dp) 16.dp else 24.dp
+            val boxSize = if (maxHeight < 600.dp) 3f else 4f
 
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(140.dp),
@@ -93,7 +100,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                 items(saved) { book ->
                     Card(
                         Modifier
-                            .aspectRatio(2f / 3f),
+                            .aspectRatio(cardRatio),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.background
                         )
@@ -110,27 +117,30 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                 text = "${book.title ?: "No title"}",
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .weight(1f)
-                                    .align(Alignment.CenterHorizontally)
-                                    .size(8.dp)
+                                    .wrapContentHeight()
+                                    .align(Alignment.CenterHorizontally),
+                                maxLines = 2,
+                                fontSize = fontSize
                             )
 
                             Text(
                                 text = "${book.author?.firstOrNull() ?: "No Author"}",
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .weight(1f)
-                                    .align(Alignment.CenterHorizontally)
-                                    .size(8.dp)
+                                    .wrapContentHeight()
+                                    .align(Alignment.CenterHorizontally),
+                                maxLines = 1,
+                                fontSize = fontSize
                             )
 
                             Text(
                                 text = "${book.year ?: "No publish year"}",
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .weight(1f)
-                                    .align(Alignment.CenterHorizontally)
-                                    .size(8.dp)
+                                    .wrapContentHeight()
+                                    .align(Alignment.CenterHorizontally),
+                                maxLines = 1,
+                                fontSize = fontSize
                             )
                         }
                     }
@@ -144,15 +154,12 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
 
 @Composable
 fun dialogScreen(onDismissRequest: () -> Unit, vm: BookViewModel) {
-    val db = Firebase.firestore
-
     Dialog(onDismissRequest = { onDismissRequest() }) {
         Card(
             modifier = Modifier
-                .fillMaxSize()
-                .height(200.dp)
+                .fillMaxWidth()
                 .padding(16.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
         ) {
             var title by remember { mutableStateOf("") }
             var author by remember { mutableStateOf("") }
@@ -191,16 +198,8 @@ fun dialogScreen(onDismissRequest: () -> Unit, vm: BookViewModel) {
 
                 IconButton(
                     onClick = {
-                        val book: Book = Book(null, author, title, year.toInt(), null)
+                        val book: Book = Book(" ", author, title, year.toInt(), null)
                         vm.addSavedBook(book)
-                        db.collection("saved")
-                            .add(book)
-                            .addOnSuccessListener { bookRef ->
-                                Log.d(TAG, "Book added with id: ${bookRef.id}")
-                            }
-                            .addOnFailureListener { e ->
-                                Log.w(TAG, "Error adding book ", e)
-                            }
                     },
                     modifier = Modifier.align(Alignment.End)
                 ) {
