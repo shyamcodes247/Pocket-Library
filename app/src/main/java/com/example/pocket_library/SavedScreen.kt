@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,9 +17,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -47,6 +50,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -57,6 +62,7 @@ import com.google.firebase.firestore.firestore
 
 @Composable
 fun SavedScreen(vm: BookViewModel = viewModel()) {
+    // Gets all saved books from view model
     val saved by vm.saved.collectAsState()
 
     Column(
@@ -85,63 +91,68 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                 .padding(16.dp, 0.dp)
                 .weight(1f)
         ) {
-            val cardRatio = if (maxWidth < 360.dp) 1f else 2f/3f
+            val cardRatio = if (maxWidth < 360.dp) 1f else 2f / 3f
             val fontSize = if (maxWidth < 360.dp) 10.sp else 12.sp
             val iconSize = if (maxWidth < 360.dp) 16.dp else 24.dp
-            val boxSize = if (maxHeight < 600.dp) 3f else 4f
+            val isTablet = if (maxWidth >= 600.dp) true else false
 
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(140.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(saved) { book ->
-                    Card(
-                        Modifier
-                            .aspectRatio(cardRatio),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.background
-                        )
-                    ) {
-                        Column(Modifier.fillMaxSize()) {
-                            AsyncImage(
-                                model = book.image,
-                                contentDescription = "Cover Image",
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier.weight(4f)
-                            )
+            if (isTablet) {
+                tabletSavedScreen(vm, cardRatio, fontSize, iconSize)
+            } else {
 
-                            Text(
-                                text = "${book.title ?: "No title"}",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterHorizontally),
-                                maxLines = 2,
-                                fontSize = fontSize
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(140.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(saved) { book ->
+                        Card(
+                            Modifier
+                                .aspectRatio(cardRatio),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.background
                             )
+                        ) {
+                            Column(Modifier.fillMaxSize()) {
+                                AsyncImage(
+                                    model = book.image,
+                                    contentDescription = "Cover Image",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.weight(4f)
+                                )
 
-                            Text(
-                                text = "${book.author?.firstOrNull() ?: "No Author"}",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterHorizontally),
-                                maxLines = 1,
-                                fontSize = fontSize
-                            )
+                                Text(
+                                    text = "${book.title ?: "No title"}",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight()
+                                        .align(Alignment.CenterHorizontally),
+                                    maxLines = 2,
+                                    fontSize = fontSize
+                                )
 
-                            Text(
-                                text = "${book.year ?: "No publish year"}",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterHorizontally),
-                                maxLines = 1,
-                                fontSize = fontSize
-                            )
+                                Text(
+                                    text = "${book.author?.firstOrNull() ?: "No Author"}",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight()
+                                        .align(Alignment.CenterHorizontally),
+                                    maxLines = 1,
+                                    fontSize = fontSize
+                                )
+
+                                Text(
+                                    text = "${book.year ?: "No publish year"}",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight()
+                                        .align(Alignment.CenterHorizontally),
+                                    maxLines = 1,
+                                    fontSize = fontSize
+                                )
+                            }
                         }
                     }
                 }
@@ -209,6 +220,137 @@ fun dialogScreen(onDismissRequest: () -> Unit, vm: BookViewModel) {
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, iconSize: Dp) {
+    // Gets list of saved from view model
+    val saved by vm.saved.collectAsState()
+
+    Row(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Box(
+            modifier = Modifier.weight(1f)
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(saved) { hit ->
+                    val book: Book = Book(
+                        hit.id.toString(),
+                        hit.author,
+                        hit.title,
+                        hit.year,
+                        hit.image
+                    )
+
+
+                    Card(
+                        onClick = { vm.selectSavedBook(book)},
+                        Modifier
+                            .aspectRatio(cardRatio)
+                            .wrapContentHeight(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.background
+                        )
+                    ) {
+                        Row(Modifier.fillMaxSize()) {
+
+                            Box(
+                                modifier = Modifier.weight(1f)
+                            ) {
+
+                                val isSaved = saved.contains(book)
+
+                                AsyncImage(
+                                    model = hit.image,
+                                    contentDescription = "Cover Image",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                IconButton(
+                                    onClick = {
+                                        if (isSaved) vm.removeSavedBook(book) else vm.addSavedBook(book)
+                                    },
+                                    modifier = Modifier.align(Alignment.TopStart).size(iconSize)
+                                ) {
+                                    Icon(
+                                        painter = if (isSaved) painterResource(R.drawable.bookmark_icon) else painterResource(
+                                            R.drawable.bookmark_border_icon
+                                        ),
+                                        contentDescription = "Favourite Button"
+                                    )
+                                }
+
+                            }
+
+                            Box(
+                                modifier = Modifier.weight(3f)
+                            ) {
+                                Column(Modifier.fillMaxSize()) {
+                                    Text(
+                                        text = "${hit.title ?: "No title"}",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .wrapContentHeight()
+                                            .align(Alignment.CenterHorizontally),
+                                        maxLines = 2,
+                                        fontSize = fontSize
+                                    )
+
+                                    Text(
+                                        text = "${hit.author?.firstOrNull() ?: "No title"}",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .wrapContentHeight()
+                                            .align(Alignment.CenterHorizontally),
+                                        maxLines = 1,
+                                        fontSize = fontSize
+                                    )
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+
+        }
+
+        Box(
+            modifier = Modifier.weight(1f)
+        ) {
+            val hit by vm.savedSelectBook.collectAsState()
+            Text(
+                text = "${hit?.title ?: "No title"}",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                maxLines = 2,
+                fontSize = fontSize
+            )
+
+            Text(
+                text = "${hit?.author?.firstOrNull() ?: "No title"}",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                maxLines = 1,
+                fontSize = fontSize
+            )
+
+            Text(
+                text = "${hit?.year ?: "No title"}",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+                maxLines = 1,
+                fontSize = fontSize
+            )
         }
     }
 }

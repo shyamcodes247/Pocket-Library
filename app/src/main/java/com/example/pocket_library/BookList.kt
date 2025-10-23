@@ -189,8 +189,10 @@ fun BookListPreview() {
     BookList(state, vm)
 }
 
+// Compose function for view on tablets
 @Composable
 fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, iconSize: Dp) {
+    // Gets list of favourites and saved from view model
     val saved by vm.saved.collectAsState()
     val favourites by vm.favourites.collectAsState()
 
