@@ -126,7 +126,7 @@ fun FavouriteScreen(vm: BookViewModel = viewModel()) {
                                 )
 
                                 Text(
-                                    text = "${book.author?.firstOrNull() ?: "No Author"}",
+                                    text = "${book.author ?: "No Author"}",
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .wrapContentHeight()
@@ -267,7 +267,7 @@ fun tabletFavouriteScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUni
             )
 
             Text(
-                text = "${hit?.author?.firstOrNull() ?: "No title"}",
+                text = "${hit?.author ?: "No title"}",
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
