@@ -1,32 +1,26 @@
 package com.example.pocket_library
 
-import android.content.ContentValues.TAG
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -45,19 +39,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
 
 @Composable
 fun SavedScreen(vm: BookViewModel = viewModel()) {
-    val saved by vm.saved.collectAsState()
+    val localBooks by vm.localBooks.collectAsState()
+    var query by remember { mutableStateOf("") }
+    var editDialogBook by remember { mutableStateOf<Book?>(null) }
 
     Column(
         Modifier
@@ -80,6 +73,28 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
             dialogScreen(onDismissRequest = { showDialog = false }, vm)
         }
 
+        if (editDialogBook != null)
+            EditBookDialog(
+                book = editDialogBook!!,
+                onDismiss = { editDialogBook = null },
+                onSave = { updatedBook ->
+                    vm.updateBookLocal(updatedBook)
+                    editDialogBook = null
+                }
+            )
+
+        OutlinedTextField(
+            value = query,
+            onValueChange = {
+                query = it
+                vm.searchLocal(query)
+            },
+            label = {Text("Search saved books...")},
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        )
+
         BoxWithConstraints(
             Modifier
                 .padding(16.dp, 0.dp)
@@ -97,7 +112,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                items(saved) { book ->
+                items(localBooks) { book ->
                     Card(
                         Modifier
                             .aspectRatio(cardRatio),
@@ -106,12 +121,42 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                         )
                     ) {
                         Column(Modifier.fillMaxSize()) {
-                            AsyncImage(
-                                model = book.image,
-                                contentDescription = "Cover Image",
-                                contentScale = ContentScale.Fit,
-                                modifier = Modifier.weight(4f)
-                            )
+
+                            Box(modifier = Modifier.weight(4f)) {
+                                AsyncImage(
+                                    model = book.image,
+                                    contentDescription = "Cover Image",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                IconButton(
+                                    onClick = { editDialogBook = book },
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(4.dp)
+                                        .size(iconSize)
+                                ){
+                                    Icon(
+                                        imageVector = Icons.Filled.Edit,
+                                        contentDescription = "Edit"
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { vm.deleteBookLocal(book) },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(4.dp)
+                                        .size(iconSize)
+                                ){
+                                    Icon(
+                                        imageVector = Icons.Filled.Delete,
+                                        contentDescription = "Delete"
+                                    )
+                                }
+                            }
+
 
                             Text(
                                 text = "${book.title ?: "No title"}",
@@ -124,7 +169,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                             )
 
                             Text(
-                                text = "${book.author?.firstOrNull() ?: "No Author"}",
+                                text = "${book.author ?: "No Author"}",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .wrapContentHeight()
@@ -142,6 +187,13 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                 maxLines = 1,
                                 fontSize = fontSize
                             )
+
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+
+                            }
                         }
                     }
                 }
@@ -149,6 +201,38 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
         }
 
         NavBar(modifier = Modifier, vm)
+    }
+}
+
+@Composable
+fun EditBookDialog(book: Book, onDismiss: () -> Unit, onSave: (Book) -> Unit){
+    var title by remember { mutableStateOf(book.title ?: "") }
+    var author by remember { mutableStateOf(book.author ?: "") }
+    var year by remember { mutableStateOf(book.year?.toString() ?: "") }
+
+    Dialog(onDismissRequest = { onDismiss() }) {
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Column (Modifier.padding(16.dp)){
+                Text("Edit book", style = MaterialTheme.typography.titleMedium)
+                TextField(value = title, onValueChange = { title = it }, label = { Text("Title") })
+                TextField(value = author, onValueChange = { author = it }, label = { Text("Author") })
+                TextField(value = year, onValueChange = { year = it }, label = { Text("Year") })
+
+                Row(Modifier.align(Alignment.End)) {
+                    IconButton(onClick = { onDismiss() }) {
+                        Icon(Icons.Outlined.Close, contentDescription = "Cancel")
+                    }
+                    IconButton(onClick = {
+                        onSave(book.copy(title = title, author = author, year = year.toIntOrNull()))
+                    }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Save")
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -198,8 +282,13 @@ fun dialogScreen(onDismissRequest: () -> Unit, vm: BookViewModel) {
 
                 IconButton(
                     onClick = {
-                        val book: Book = Book(" ", author, title, year.toInt(), null)
-                        vm.addSavedBook(book)
+                        val yearInt = year.toIntOrNull()
+
+                        val book = Book(id = null, author = author, title = title, year = yearInt, image = null)
+
+                        vm.saveBookLocal(book)
+
+                        onDismissRequest()
                     },
                     modifier = Modifier.align(Alignment.End)
                 ) {

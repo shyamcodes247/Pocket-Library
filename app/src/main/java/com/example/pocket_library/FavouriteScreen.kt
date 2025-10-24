@@ -108,7 +108,7 @@ fun FavouriteScreen(vm: BookViewModel = viewModel()) {
                             )
 
                             Text(
-                                text = "${book.author?.firstOrNull() ?: "No Author"}",
+                                text = "${book.author ?: "No Author"}",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .wrapContentHeight()

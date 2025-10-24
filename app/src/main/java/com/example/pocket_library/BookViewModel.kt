@@ -4,17 +4,21 @@ import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pocket_library.local.AppDatabase
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import com.example.pocket_library.local.BookEntity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import androidx.lifecycle.AndroidViewModel
+import android.app.Application
+import androidx.room.Room
+
 
 data class UiState(
     val query: String = "",
@@ -23,18 +27,29 @@ data class UiState(
     val results: List<Hit> = emptyList()
 )
 
-data class Book(
-    var id: String? = " ",
-    val author: String? = null,
-    val title: String? = null,
-    val year: Int? = null,
-    val image: String? = null
-)
+//data class Book(
+//    var id: String? = " ",
+//    val author: String? = null,
+//    val title: String? = null,
+//    val year: Int? = null,
+//    val image: String? = null
+//)
 
-class BookViewModel : ViewModel() {
+class BookViewModel(application: Application) : AndroidViewModel(application) {
     private val db = Firebase.firestore
+    private val context = application.applicationContext
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
+
+    private val roomDb = Room.databaseBuilder(
+        context,
+        AppDatabase::class.java,
+        "pocket_library_database"
+    ).build()
+
+    private val bookDao = roomDb.bookDao()
+    private val _localBooks = MutableStateFlow<List<Book>>(emptyList())
+    val localBooks: StateFlow<List<Book>> = _localBooks
 
     private val _favourites = MutableStateFlow<List<Book>>(emptyList())
 
@@ -48,10 +63,77 @@ class BookViewModel : ViewModel() {
 
     val selectedBook: StateFlow<Book?> = _selectedBook
 
-
     init {
         getFavourites()
         getSavedBooks()
+        observeLocalBooks()
+    }
+
+    private fun observeLocalBooks() {
+        viewModelScope.launch {
+            bookDao.getAllBooks().collect { entities ->
+                _localBooks.value = entities.map {
+                    Book(it.id.toString(), it.author, it.title, it.year, it.image)
+                }
+            }
+        }
+    }
+
+    fun saveBookLocal(book: Book){
+        viewModelScope.launch {
+            val bookId = book.id?.toIntOrNull() ?: 0
+            bookDao.insert(
+                BookEntity(
+                    id = bookId,
+                    title = book.title,
+                    author = book.author,
+                    year = book.year,
+                    image = book.image
+                )
+            )
+        }
+    }
+
+    fun deleteBookLocal(book: Book){
+        viewModelScope.launch {
+            val bookId = book.id?.toIntOrNull() ?: 0
+            bookDao.delete(
+                BookEntity(
+                    id = bookId,
+                    title = book.title,
+                    author = book.author,
+                    year = book.year,
+                    image = book.image
+                )
+            )
+
+            _saved.value = _saved.value.filter {it.id != book.id}
+        }
+    }
+
+    fun updateBookLocal(book: Book) {
+        viewModelScope.launch {
+            val bookId = book.id?.toIntOrNull() ?: 0
+            bookDao.update(
+                BookEntity(
+                    id = bookId ?: 0,
+                    title = book.title ?: "",
+                    author = book.author ?: "",
+                    year = book.year ?: 0,
+                    image = book.image ?: ""
+                )
+            )
+        }
+    }
+
+    fun searchLocal(query: String){
+        viewModelScope.launch {
+            bookDao.searchBooks(query).collect { entities ->
+                _localBooks.value = entities.map {
+                    Book(it.id.toString(), it.author, it.title, it.year, it.image)
+                }
+            }
+        }
     }
 
     var screen by mutableStateOf(0)

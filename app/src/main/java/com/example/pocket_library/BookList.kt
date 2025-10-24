@@ -1,9 +1,5 @@
 package com.example.pocket_library
 
-import android.content.ContentValues.TAG
-import android.telephony.UiccCardInfo
-import android.util.Log
-import android.webkit.WebSettings
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,8 +18,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.magnifier
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -39,16 +33,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material3.IconButton
-import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.firestore
 
 @Composable
 fun BookList(state: UiState, vm: BookViewModel) {
@@ -108,7 +97,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                         modifier = Modifier.weight(boxSize)
                                     ) {
 
-                                        val book: Book = Book(hit.coverId.toString(), hit.authorName?.firstOrNull(), hit.title, hit.firstPublicYear,hit.getCoverImage("S"))
+                                        val book: Book = Book(hit.coverId.toString(), hit.title, hit.authorName?.firstOrNull(), hit.firstPublicYear,hit.getCoverImage("S"))
 
                                         val isSaved = saved.contains(book)
                                         val isFavourite = favourites.contains(book)
@@ -121,7 +110,15 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                         )
 
                                         IconButton(
-                                            onClick = { if (isSaved) vm.removeSavedBook(book) else vm.addSavedBook(book) },
+                                            onClick = {
+                                                if (isSaved) {
+                                                    vm.removeSavedBook(book)
+                                                    vm.deleteBookLocal(book)
+                                                } else {
+                                                    vm.addSavedBook(book)
+                                                    vm.saveBookLocal(book)
+                                                }
+                                            },
                                             modifier = Modifier.align(Alignment.TopStart).size(iconSize)
                                         ) {
                                             Icon(
@@ -315,7 +312,7 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
             )
 
             Text(
-                text = "${hit?.author?.firstOrNull() ?: "No title"}",
+                text = "${hit?.author ?: "No title"}",
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
