@@ -363,7 +363,7 @@ fun SavedScreenPreview() {
     SavedScreen(vm)
 }
 
-@Previews
+@Preview
 @Composable
 fun dialogScreenPreview() {
     var showDialog = true
