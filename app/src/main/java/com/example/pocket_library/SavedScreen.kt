@@ -68,16 +68,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import android.content.Context
-
-private fun shareBook(context: Context, book: Book){
-    val sendIntent: Intent = Intent().apply {
-        action = Intent.ACTION_SEND
-        putExtra(Intent.EXTRA_TEXT, "Check out this book: ${book.title} by ${book.author}.")
-        type = "text/plain"
-    }
-    val shareIntent = Intent.createChooser(sendIntent, "Share book via...")
-    context.startActivity(shareIntent)
-}
+import android.graphics.BitmapFactory
 
 @Composable
 fun SavedScreen(vm: BookViewModel = viewModel()) {
@@ -157,12 +148,31 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                         Column(Modifier.fillMaxSize()) {
 
                             Box(modifier = Modifier.weight(4f)) {
-                                AsyncImage(
-                                    model = book.image,
-                                    contentDescription = "Cover Image",
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier.fillMaxSize()
-                                )
+
+                                val imageBitmap = remember(book.image) {
+                                    try {
+                                        val decodedBytes = Base64.decode(book.image, Base64.DEFAULT)
+                                        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                }
+
+                                if (imageBitmap != null) {
+                                    Image(
+                                        bitmap = imageBitmap.asImageBitmap(),
+                                        contentDescription = "Cover Image",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    AsyncImage(
+                                        model = book.image,
+                                        contentDescription = "Cover Image",
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
 
                                 IconButton(
                                     onClick = { editDialogBook = book },
@@ -212,7 +222,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                             type = "text/plain"
                                             putExtra(
                                                 Intent.EXTRA_TEXT,
-                                                "Hey $contactName, check out this book: ${book.title} by ${book.author}."
+                                                "Hey $contactName, check out this book: ${book.author} by ${book.title}."
                                             )
                                         }
                                         context.startActivity(
@@ -487,3 +497,4 @@ fun dialogScreenPreview() {
     var showDialog = true
     dialogScreen(onDismissRequest = { showDialog = false}, vm = viewModel())
 }
+
