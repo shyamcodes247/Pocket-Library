@@ -45,12 +45,46 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import android.graphics.Bitmap
+import android.util.Base64
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.graphics.asImageBitmap
+import java.io.ByteArrayOutputStream
+import androidx.compose.foundation.Image
+import androidx.compose.material3.Button
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
+import android.content.Intent
+import android.net.Uri
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import android.content.Context
+
+private fun shareBook(context: Context, book: Book){
+    val sendIntent: Intent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, "Check out this book: ${book.title} by ${book.author}.")
+        type = "text/plain"
+    }
+    val shareIntent = Intent.createChooser(sendIntent, "Share book via...")
+    context.startActivity(shareIntent)
+}
 
 @Composable
 fun SavedScreen(vm: BookViewModel = viewModel()) {
     val localBooks by vm.localBooks.collectAsState()
     var query by remember { mutableStateOf("") }
     var editDialogBook by remember { mutableStateOf<Book?>(null) }
+    val context = LocalContext.current
 
     Column(
         Modifier
@@ -155,6 +189,53 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                         contentDescription = "Delete"
                                     )
                                 }
+
+                                val contactPickerLauncher = rememberLauncherForActivityResult(
+                                    contract = ActivityResultContracts.PickContact()
+                                ){ contactUri: Uri? ->
+                                    if (contactUri != null) {
+                                        val cursor = context.contentResolver.query(
+                                            contactUri,
+                                            arrayOf(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY),
+                                            null, null, null
+                                        )
+                                        var contactName = "your friend"
+                                        cursor?.use {
+                                            if (it.moveToFirst()) {
+                                                contactName = it.getString(
+                                                    it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+                                                )
+                                            }
+                                        }
+
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(
+                                                Intent.EXTRA_TEXT,
+                                                "Hey $contactName, check out this book: ${book.title} by ${book.author}."
+                                            )
+                                        }
+                                        context.startActivity(
+                                            Intent.createChooser(
+                                                shareIntent,
+                                                "Share book via..."
+                                            )
+                                        )
+                                    }
+                                }
+
+                                IconButton(
+                                    onClick = { contactPickerLauncher.launch(null) },
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(4.dp)
+                                        .size(iconSize)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Share,
+                                        contentDescription = "Share Book"
+                                    )
+                                }
                             }
 
 
@@ -209,10 +290,31 @@ fun EditBookDialog(book: Book, onDismiss: () -> Unit, onSave: (Book) -> Unit){
     var title by remember { mutableStateOf(book.title ?: "") }
     var author by remember { mutableStateOf(book.author ?: "") }
     var year by remember { mutableStateOf(book.year?.toString() ?: "") }
+    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    val context = LocalContext.current
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        imageBitmap = bitmap
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            cameraLauncher.launch()
+        } else {
+            Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     Dialog(onDismissRequest = { onDismiss() }) {
         Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             shape = RoundedCornerShape(12.dp),
         ) {
             Column (Modifier.padding(16.dp)){
@@ -221,13 +323,45 @@ fun EditBookDialog(book: Book, onDismiss: () -> Unit, onSave: (Book) -> Unit){
                 TextField(value = author, onValueChange = { author = it }, label = { Text("Author") })
                 TextField(value = year, onValueChange = { year = it }, label = { Text("Year") })
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                imageBitmap?.let {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = "Captured Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = { permissionLauncher.launch(android.Manifest.permission.CAMERA)}
+                ) {
+                    Text("Capture New Image")
+                }
+
                 Row(Modifier.align(Alignment.End)) {
                     IconButton(onClick = { onDismiss() }) {
                         Icon(Icons.Outlined.Close, contentDescription = "Cancel")
                     }
                     IconButton(onClick = {
-                        onSave(book.copy(title = title, author = author, year = year.toIntOrNull()))
-                    }) {
+                        onSave(
+                            book.copy(
+                                title = title,
+                                author = author,
+                                year = year.toIntOrNull(),
+                                image = imageBitmap?.let { bitmap ->
+                                    val output = ByteArrayOutputStream()
+                                    bitmap.compress(Bitmap.CompressFormat.JPEG, 80, output)
+                                    Base64.encodeToString(output.toByteArray(), Base64.DEFAULT)
+                                } ?: book.image
+                            )
+                        )
+                    }
+                    ) {
                         Icon(Icons.Filled.Edit, contentDescription = "Save")
                     }
                 }
@@ -238,6 +372,14 @@ fun EditBookDialog(book: Book, onDismiss: () -> Unit, onSave: (Book) -> Unit){
 
 @Composable
 fun dialogScreen(onDismissRequest: () -> Unit, vm: BookViewModel) {
+    var imageBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        imageBitmap = bitmap
+    }
+
     Dialog(onDismissRequest = { onDismissRequest() }) {
         Card(
             modifier = Modifier
@@ -280,11 +422,40 @@ fun dialogScreen(onDismissRequest: () -> Unit, vm: BookViewModel) {
                     label = { Text("Enter the publication year of the book: ") }
                 )
 
+                Spacer(modifier = Modifier.height(8.dp))
+
+                imageBitmap?.let {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = "Captured Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = { cameraLauncher.launch() },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Capture Cover Image")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 IconButton(
                     onClick = {
                         val yearInt = year.toIntOrNull()
 
-                        val book = Book(id = null, author = author, title = title, year = yearInt, image = null)
+                        val imageString = imageBitmap?.let { bitmap ->
+                            val output = ByteArrayOutputStream()
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 80, output)
+                            Base64.encodeToString(output.toByteArray(), Base64.DEFAULT)
+                        }
+
+                        val book = Book(id = null, author = author, title = title, year = yearInt, image = imageString)
 
                         vm.saveBookLocal(book)
 
