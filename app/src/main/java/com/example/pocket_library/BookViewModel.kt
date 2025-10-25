@@ -74,7 +74,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             bookDao.getAllBooks().collect { entities ->
                 _saved.value = entities.map {
-                    Book(it.id.toString(), it.author, it.title, it.year, it.image)
+                    Book(it.id.toString(), it.author, it.title, it.year, it.image, it.firebaseId)
                 }
             }
         }
@@ -89,7 +89,8 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                     title = book.title ?: "",
                     author = book.author ?: "",
                     year = book.year ?: 0,
-                    image = book.image ?: ""
+                    image = book.image ?: "",
+                    firebaseId = book.firebaseId ?: ""
                 )
             )
         }
@@ -170,7 +171,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
             .add(book)
             .addOnSuccessListener { bookRef ->
                 Log.d(TAG, "Book added with id: ${bookRef.id}")
-                book.id = bookRef.id
+                book.firebaseId = bookRef.id
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Error adding book ", e)
@@ -185,7 +186,8 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                     title = book.title,
                     author = book.author,
                     year = book.year,
-                    image = book.image
+                    image = book.image,
+                    firebaseId = book.firebaseId
                 )
             )
         }
@@ -196,7 +198,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
     // Removing saved book from firestore
     fun removeSavedBook(book: Book) {
         db.collection("saved")
-            .document(book.id.toString())  // bookId is the Firestore document ID
+            .document(book.firebaseId.toString())  // find the Firestore document ID
             .delete()
             .addOnSuccessListener {
                 Log.d("BookViewModel", "Saved book successfully deleted!")
@@ -215,7 +217,8 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                     title = book.title,
                     author = book.author,
                     year = book.year,
-                    image = book.image
+                    image = book.image,
+                    firebaseId = book.firebaseId
                 )
             )
         }
@@ -242,5 +245,9 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
     // Function for selecting a saved book to view on tablet
     fun selectSavedBook(book: Book) {
         _savedSelectBook.value = book
+    }
+
+    fun isBookSaved(book: Book): Boolean {
+        return _saved.value.any { it.id == book.id }
     }
 }

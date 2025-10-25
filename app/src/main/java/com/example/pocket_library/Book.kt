@@ -5,5 +5,6 @@ data class Book(
     val title: String? = null,
     val author: String? = null,
     val year: Int? = null,
-    val image: String? = null
+    val image: String? = null,
+    var firebaseId: String? = null
 )

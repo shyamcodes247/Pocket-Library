@@ -124,10 +124,9 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                 hit.title,
                                                 hit.authorName?.firstOrNull(),
                                                 hit.firstPublicYear,
-                                                hit.getCoverImage("L")
+                                                hit.getCoverImage("L"),
+                                                null
                                             )
-
-                                            val isSaved = saved.contains(book)
 
                                             AsyncImage(
                                                 model = hit.getCoverImage("L"),
@@ -138,7 +137,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
 
                                             IconButton(
                                                 onClick = {
-                                                    if (isSaved) {
+                                                    if (vm.isBookSaved(book)) {
                                                         vm.removeSavedBook(book)
                                                     } else {
                                                         vm.addSavedBook(book)
@@ -148,7 +147,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                     .size(iconSize)
                                             ) {
                                                 Icon(
-                                                    painter = if (isSaved) painterResource(R.drawable.bookmark_icon) else painterResource(
+                                                    painter = if (vm.isBookSaved(book)) painterResource(R.drawable.bookmark_icon) else painterResource(
                                                         R.drawable.bookmark_border_icon
                                                     ),
                                                     contentDescription = "Favourite Button"
@@ -234,7 +233,8 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                 author = hit.authorName?.firstOrNull(),
                                 title = hit.title,
                                 year = hit.firstPublicYear,
-                                image = hit.getCoverImage("L")
+                                image = hit.getCoverImage("L"),
+                                firebaseId = null
                             )
 
                             val isSaved = saved.contains(book)
@@ -319,7 +319,8 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                         hit.authorName?.firstOrNull(),
                         hit.title,
                         hit.firstPublicYear,
-                        hit.getCoverImage("L")
+                        hit.getCoverImage("L"),
+                        null
                     )
 
 

@@ -650,7 +650,7 @@ fun dialogScreen(onDismissRequest: () -> Unit, vm: BookViewModel) {
                             Base64.encodeToString(output.toByteArray(), Base64.DEFAULT)
                         }
 
-                        val book = Book(id = null, author = author, title = title, year = yearInt, image = imageString)
+                        val book = Book(id = null, author = author, title = title, year = yearInt, image = imageString, firebaseId = null)
 
                         vm.addSavedBook(book)
 
@@ -688,7 +688,8 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
                         hit.author,
                         hit.title,
                         hit.year,
-                        hit.image
+                        hit.image,
+                        null
                     )
 
 
