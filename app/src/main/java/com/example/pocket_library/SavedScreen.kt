@@ -335,7 +335,7 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
             )
 
             Text(
-                text = "${hit?.author?.firstOrNull() ?: "No title"}",
+                text = "${hit?.author ?: "No title"}",
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),

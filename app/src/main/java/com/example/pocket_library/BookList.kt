@@ -287,7 +287,7 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
             )
 
             Text(
-                text = "${hit?.author?.firstOrNull() ?: "No title"}",
+                text = "${hit?.author ?: "No title"}",
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
