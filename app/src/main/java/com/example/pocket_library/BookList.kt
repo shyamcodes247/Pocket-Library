@@ -47,10 +47,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.CardDefaults
 import android.content.Intent
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import org.jetbrains.annotations.Async
 
 @Composable
 fun BookList(state: UiState, vm: BookViewModel) {
@@ -299,6 +303,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                             fontSize = fontSize,
                                             maxLines = 1
                                         )
+
                                     }
                                 }
                             }
@@ -323,6 +328,7 @@ fun BookListPreview() {
 fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, iconSize: Dp) {
     // Gets list of favourites and saved from view model
     val savedIds by vm.savedIds.collectAsState()
+    val context = LocalContext.current
 
     Row(
         modifier = Modifier.fillMaxSize()
@@ -336,8 +342,8 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                 items(state.results) { hit ->
                     val book: Book = Book(
                         hit.coverId.toString(),
-                        hit.authorName?.firstOrNull(),
                         hit.title,
+                        hit.authorName?.firstOrNull(),
                         hit.firstPublicYear,
                         hit.getCoverImage("L")
                     )
@@ -351,38 +357,48 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                             containerColor = MaterialTheme.colorScheme.background
                         )
                     ) {
-                        Row(Modifier.fillMaxSize()) {
+                        Row(Modifier.fillMaxWidth()) {
+
+                            val isSaved = savedIds.contains(book.id)
+
+                            IconButton(
+                                onClick = {
+                                    if (isSaved) vm.removeSavedBook(book) else vm.addSavedBook(book)
+                                },
+                                modifier = Modifier
+                                    .size(iconSize)
+                                    .padding(2.dp)
+                            ) {
+                                Icon(
+                                    painter = if (isSaved) painterResource(R.drawable.bookmark_icon) else painterResource(
+                                        R.drawable.bookmark_border_icon
+                                    ),
+                                    contentDescription = "Favourite Button"
+                                )
+                            }
 
                             Box(
                                 modifier = Modifier.weight(1f)
                             ) {
 
-                                val isSaved = savedIds.contains(book.id)
-
                                 AsyncImage(
                                     model = hit.getCoverImage("L"),
                                     contentDescription = "Cover Image",
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier.wrapContentHeight()
+                                    modifier = Modifier
+                                        .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 24.dp)
+                                        .fillMaxWidth()
+                                        .align(Alignment.Center)
                                 )
 
-                                IconButton(
-                                    onClick = {
-                                        if (isSaved) vm.removeSavedBook(book) else vm.addSavedBook(book)
-                                    },
-                                    modifier = Modifier.align(Alignment.TopStart).size(iconSize)
-                                ) {
-                                    Icon(
-                                        painter = if (isSaved) painterResource(R.drawable.bookmark_icon) else painterResource(
-                                            R.drawable.bookmark_border_icon
-                                        ),
-                                        contentDescription = "Favourite Button"
-                                    )
-                                }
                             }
 
+
                             Box(
-                                modifier = Modifier.weight(3f)
+                                modifier = Modifier
+                                    .weight(3f)
+                                    .fillMaxHeight()
+                                    .padding(4.dp)
                             ) {
                                 Column(Modifier.fillMaxSize()) {
                                     Text(
@@ -414,6 +430,45 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                                         fontSize = fontSize
                                     )
                                 }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .padding(4.dp)
+                                    ) {
+                                        IconButton(
+                                            onClick = {
+                                                val shareIntent =
+                                                    Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(
+                                                            Intent.EXTRA_TEXT,
+                                                            "Check out this book: ${book.title ?: "Unknown Title"} by ${book.author ?: "Unknown Author"}."
+                                                        )
+                                                    }
+                                                context.startActivity(
+                                                    Intent.createChooser(
+                                                        shareIntent,
+                                                        "Share book via..."
+                                                    )
+                                                )
+                                            },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(4.dp)
+                                                .size(iconSize)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Share,
+                                                contentDescription = "Share Book"
+                                            )
+                                        }
+                                    }
+                                }
                             }
 
                         }
@@ -424,35 +479,52 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
         }
 
         Box(
-            modifier = Modifier.weight(2f)
+            modifier = Modifier.weight(1.5f)
         ) {
             val hit by vm.selectedBook.collectAsState()
             Column(Modifier.fillMaxSize()) {
+                AsyncImage(
+                    model = hit?.image,
+                    contentDescription = "Cover Image",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 24.dp)
+                        .fillMaxWidth()
+                        .height(350.dp),
+                    alignment = Alignment.Center
+                )
+
                 Text(
                     text = "${hit?.title ?: ""}",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight(),
+                        .wrapContentHeight()
+                        .padding(4.dp),
                     maxLines = 2,
-                    fontSize = fontSize
+                    fontSize = 24.sp,
+                    textAlign = TextAlign.Center
                 )
 
                 Text(
                     text = "${hit?.author ?: ""}",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight(),
+                        .wrapContentHeight()
+                        .padding(4.dp),
                     maxLines = 1,
-                    fontSize = fontSize
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center
                 )
 
                 Text(
                     text = "${hit?.year ?: ""}",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight(),
+                        .wrapContentHeight()
+                        .padding(4.dp),
                     maxLines = 1,
-                    fontSize = fontSize
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
                 )
             }
         }

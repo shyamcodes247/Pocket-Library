@@ -76,6 +76,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import android.content.Context
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -84,6 +85,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
 fun SavedScreen(vm: BookViewModel = viewModel()) {
@@ -678,6 +680,18 @@ fun dialogScreen(onDismissRequest: () -> Unit, vm: BookViewModel) {
 fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, iconSize: Dp) {
     // Gets list of saved from view model
     val saved by vm.saved.collectAsState()
+    val context = LocalContext.current
+    var editDialogBook by remember { mutableStateOf<Book?>(null) }
+
+    if (editDialogBook != null)
+        EditBookDialog(
+            book = editDialogBook!!,
+            onDismiss = { editDialogBook = null },
+            onSave = { updatedBook ->
+                vm.updateBookLocal(updatedBook)
+                editDialogBook = null
+            }
+        )
 
     Row(
         modifier = Modifier.fillMaxSize()
@@ -706,7 +720,26 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
                             containerColor = MaterialTheme.colorScheme.background
                         )
                     ) {
-                        Row(Modifier.fillMaxSize()) {
+                        Row(Modifier.fillMaxWidth()) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(0.2f)
+                                    .fillMaxHeight(),
+                                verticalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                IconButton(
+                                    onClick = { editDialogBook = book },
+                                    modifier = Modifier.size(iconSize)
+                                ) {
+                                    Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                                }
+                                IconButton(
+                                    onClick = { vm.removeSavedBook(book) },
+                                    modifier = Modifier.size(iconSize)
+                                ) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Delete")
+                                }
+                            }
 
                             Box(
                                 modifier = Modifier.weight(1f)
@@ -716,12 +749,20 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
                                     model = hit.image,
                                     contentDescription = "Cover Image",
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier
+                                        .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 24.dp)
+                                        .fillMaxWidth()
+                                        .align(Alignment.Center)
                                 )
+
                             }
 
+
                             Box(
-                                modifier = Modifier.weight(3f)
+                                modifier = Modifier
+                                    .weight(3f)
+                                    .fillMaxHeight()
+                                    .padding(4.dp)
                             ) {
                                 Column(Modifier.fillMaxSize()) {
                                     Text(
@@ -735,7 +776,7 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
                                     )
 
                                     Text(
-                                        text = "${hit.author?.firstOrNull() ?: ""}",
+                                        text = "${hit.author ?: ""}",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .wrapContentHeight()
@@ -743,6 +784,54 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
                                         maxLines = 1,
                                         fontSize = fontSize
                                     )
+                                    Text(
+                                        text = "${hit.year ?: ""}",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .wrapContentHeight()
+                                            .align(Alignment.CenterHorizontally),
+                                        maxLines = 1,
+                                        fontSize = fontSize
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .padding(4.dp)
+                                    ) {
+                                        IconButton(
+                                            onClick = {
+                                                val shareIntent =
+                                                    Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(
+                                                            Intent.EXTRA_TEXT,
+                                                            "Check out this book: ${book.title ?: "Unknown Title"} by ${book.author ?: "Unknown Author"}."
+                                                        )
+                                                    }
+                                                context.startActivity(
+                                                    Intent.createChooser(
+                                                        shareIntent,
+                                                        "Share book via..."
+                                                    )
+                                                )
+                                            },
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(4.dp)
+                                                .size(iconSize)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Share,
+                                                contentDescription = "Share Book"
+                                            )
+                                        }
+                                    }
                                 }
                             }
 
@@ -754,35 +843,52 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
         }
 
         Box(
-            modifier = Modifier.weight(2f)
+            modifier = Modifier.weight(1.5f)
         ) {
             val hit by vm.savedSelectBook.collectAsState()
             Column(Modifier.fillMaxSize()) {
+                AsyncImage(
+                    model = hit?.image,
+                    contentDescription = "Cover Image",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 24.dp)
+                        .fillMaxWidth()
+                        .height(350.dp),
+                    alignment = Alignment.Center
+                )
+
                 Text(
                     text = "${hit?.title ?: ""}",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight(),
+                        .wrapContentHeight()
+                        .padding(4.dp),
                     maxLines = 2,
-                    fontSize = fontSize
+                    fontSize = 24.sp,
+                    textAlign = TextAlign.Center
                 )
 
                 Text(
                     text = "${hit?.author ?: ""}",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight(),
+                        .wrapContentHeight()
+                        .padding(4.dp),
                     maxLines = 1,
-                    fontSize = fontSize
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center
                 )
 
                 Text(
                     text = "${hit?.year ?: ""}",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .wrapContentHeight(),
+                        .wrapContentHeight()
+                        .padding(4.dp),
                     maxLines = 1,
-                    fontSize = fontSize
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
                 )
             }
         }
