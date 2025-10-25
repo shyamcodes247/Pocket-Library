@@ -17,7 +17,5 @@ data class BookEntity(
     @ColumnInfo(name = "year")
     val year: Int? = 0,
     @ColumnInfo(name = "image")
-    val image: String? = "",
-    @ColumnInfo(name = "firebaseId")
-    val firebaseId: String? = ""
+    val image: String? = ""
 )

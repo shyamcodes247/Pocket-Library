@@ -650,7 +650,7 @@ fun dialogScreen(onDismissRequest: () -> Unit, vm: BookViewModel) {
                             Base64.encodeToString(output.toByteArray(), Base64.DEFAULT)
                         }
 
-                        val book = Book(id = null, author = author, title = title, year = yearInt, image = imageString, firebaseId = null)
+                        val book = Book(id = null, author = author, title = title, year = yearInt, image = imageString)
 
                         vm.addSavedBook(book)
 
@@ -688,8 +688,7 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
                         hit.author,
                         hit.title,
                         hit.year,
-                        hit.image,
-                        null
+                        hit.image
                     )
 
 
@@ -738,7 +737,7 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
                             ) {
                                 Column(Modifier.fillMaxSize()) {
                                     Text(
-                                        text = "${hit.title ?: "No title"}",
+                                        text = "${hit.title ?: ""}",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .wrapContentHeight()
@@ -748,7 +747,7 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
                                     )
 
                                     Text(
-                                        text = "${hit.author?.firstOrNull() ?: "No title"}",
+                                        text = "${hit.author?.firstOrNull() ?: ""}",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .wrapContentHeight()
@@ -771,7 +770,7 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
         ) {
             val hit by vm.savedSelectBook.collectAsState()
             Text(
-                text = "${hit?.title ?: "No title"}",
+                text = "${hit?.title ?: ""}",
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
@@ -780,7 +779,7 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
             )
 
             Text(
-                text = "${hit?.author ?: "No title"}",
+                text = "${hit?.author ?: ""}",
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
@@ -789,7 +788,7 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
             )
 
             Text(
-                text = "${hit?.year ?: "No title"}",
+                text = "${hit?.year ?: ""}",
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),

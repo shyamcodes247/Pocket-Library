@@ -55,6 +55,10 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
 
     val savedSelectBook: StateFlow<Book?> = _savedSelectBook
 
+    private val _savedIds = MutableStateFlow<List<String>>(emptyList())
+
+    val savedIds: StateFlow<List<String>> = _savedIds
+
 
     init {
         getSavedBooks()
@@ -74,7 +78,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             bookDao.getAllBooks().collect { entities ->
                 _saved.value = entities.map {
-                    Book(it.id.toString(), it.author, it.title, it.year, it.image, it.firebaseId)
+                    Book(it.id.toString(), it.author, it.title, it.year, it.image)
                 }
             }
         }
@@ -89,8 +93,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                     title = book.title ?: "",
                     author = book.author ?: "",
                     year = book.year ?: 0,
-                    image = book.image ?: "",
-                    firebaseId = book.firebaseId ?: ""
+                    image = book.image ?: ""
                 )
             )
         }
@@ -167,16 +170,17 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
 
     // Function for saving a book (as saved) to firestore
     fun addSavedBook(book: Book) {
-        db.collection("saved")
-            .add(book)
-            .addOnSuccessListener { bookRef ->
-                Log.d(TAG, "Book added with id: ${bookRef.id}")
-                book.firebaseId = bookRef.id
-            }
-            .addOnFailureListener { e ->
-                Log.w(TAG, "Error adding book ", e)
-            }
 
+        book?.id?.let {
+            db.collection("saved").document(it)
+                .set(book)
+                .addOnSuccessListener {
+                    Log.d(TAG, "Book added with id: ${book.id}")
+                }
+                .addOnFailureListener { e ->
+                    Log.w(TAG, "Error adding book ", e)
+                }
+        }
 
         viewModelScope.launch {
             val bookId = book.id?.toIntOrNull() ?: 0
@@ -186,19 +190,19 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                     title = book.title,
                     author = book.author,
                     year = book.year,
-                    image = book.image,
-                    firebaseId = book.firebaseId
+                    image = book.image
                 )
             )
         }
 
         _saved.value = _saved.value + book
+        _savedIds.value = _savedIds.value + (book.id ?: "")
     }
 
     // Removing saved book from firestore
     fun removeSavedBook(book: Book) {
         db.collection("saved")
-            .document(book.firebaseId.toString())  // find the Firestore document ID
+            .document(book.id.toString())  // find the Firestore document ID
             .delete()
             .addOnSuccessListener {
                 Log.d("BookViewModel", "Saved book successfully deleted!")
@@ -208,6 +212,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
             }
 
         _saved.value = _saved.value.filter {it.id != book.id}
+        _savedIds.value = _savedIds.value.filter {it != book.id}
 
         viewModelScope.launch {
             val bookId = book.id?.toIntOrNull() ?: 0
@@ -217,8 +222,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                     title = book.title,
                     author = book.author,
                     year = book.year,
-                    image = book.image,
-                    firebaseId = book.firebaseId
+                    image = book.image
                 )
             )
         }
@@ -245,9 +249,5 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
     // Function for selecting a saved book to view on tablet
     fun selectSavedBook(book: Book) {
         _savedSelectBook.value = book
-    }
-
-    fun isBookSaved(book: Book): Boolean {
-        return _saved.value.any { it.id == book.id }
     }
 }
