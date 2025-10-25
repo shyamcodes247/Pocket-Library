@@ -37,7 +37,7 @@ data class UiState(
 
 class BookViewModel(application: Application) : AndroidViewModel(application) {
     private val db = Firebase.firestore
-    private val context = application.applicationContext
+    private val context = getApplication<Application>().applicationContext
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
@@ -67,6 +67,15 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
         getFavourites()
         getSavedBooks()
         observeLocalBooks()
+
+        viewModelScope.launch {
+            getLastQuery(context).collect { lastQ ->
+                if (lastQ.isNotEmpty()) {
+                    _state.value = _state.value.copy(query = lastQ)
+                    search()
+                }
+            }
+        }
     }
 
     private fun observeLocalBooks() {
@@ -141,6 +150,9 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
 
     fun updateQuery(q: String) {
         _state.value = _state.value.copy(query = q)
+        viewModelScope.launch {
+            saveLastQuery(context, q)
+        }
         // Simple debounce:
         searchJob?.cancel()
         searchJob = viewModelScope.launch {

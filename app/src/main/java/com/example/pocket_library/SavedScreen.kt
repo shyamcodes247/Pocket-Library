@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -35,6 +36,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -69,6 +72,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import android.content.Context
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.lazy.grid.LazyGridState
 
 @Composable
 fun SavedScreen(vm: BookViewModel = viewModel()) {
@@ -76,6 +80,28 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
     var query by remember { mutableStateOf("") }
     var editDialogBook by remember { mutableStateOf<Book?>(null) }
     val context = LocalContext.current
+    val gridState = rememberLazyGridState()
+
+    LaunchedEffect(localBooks){
+        if (localBooks.isNotEmpty()) {
+            getScrollPosition(context).collect { (index, offset) ->
+                gridState.scrollToItem(index, offset)
+            }
+        }
+    }
+
+    LaunchedEffect(
+        gridState.firstVisibleItemIndex,
+        gridState.firstVisibleItemScrollOffset
+    ) {
+        if (localBooks.isNotEmpty()){
+            saveScrollPosition(
+                context,
+                gridState.firstVisibleItemIndex,
+                gridState.firstVisibleItemScrollOffset
+            )
+        }
+    }
 
     Column(
         Modifier
@@ -130,7 +156,10 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
             val iconSize = if (maxWidth < 360.dp) 16.dp else 24.dp
             val boxSize = if (maxHeight < 600.dp) 3f else 4f
 
+            val gridState = rememberLazyGridState()
+
             LazyVerticalGrid(
+                state = gridState,
                 columns = GridCells.Adaptive(140.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),

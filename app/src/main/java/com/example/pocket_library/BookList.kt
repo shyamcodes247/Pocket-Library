@@ -10,16 +10,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,6 +39,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.material3.CardDefaults
 
 @Composable
 fun BookList(state: UiState, vm: BookViewModel) {
@@ -53,6 +58,12 @@ fun BookList(state: UiState, vm: BookViewModel) {
         val iconSize = if (maxWidth < 360.dp) 16.dp else 24.dp
         val boxSize = if (maxHeight < 600.dp) 3f else 4f
         val isTablet = if (maxWidth >= 600.dp) true else false
+
+        val configuration = LocalConfiguration.current
+        val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+
+        val listState = rememberLazyListState()
+        val gridState = rememberLazyGridState()
 
         if (isTablet) {
             tabletBookList(state, vm, cardRatio, fontSize, iconSize)
@@ -75,33 +86,150 @@ fun BookList(state: UiState, vm: BookViewModel) {
                 }
 
                 else -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Adaptive(140.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp)
-                    ) {
-                        items(state.results) { hit ->
+                    if (isPortrait) {
+                        LazyColumn(
+                            state = listState,
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            items(state.results) { hit ->
 
-                            Card(Modifier
-                                .aspectRatio(cardRatio)
-                                .wrapContentHeight(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.background
+                                Card(
+                                    Modifier
+                                        .aspectRatio(cardRatio)
+                                        .wrapContentHeight(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.background
+                                    )
+                                ) {
+                                    Column(Modifier.fillMaxSize()) {
+
+                                        Box(
+                                            modifier = Modifier.weight(boxSize)
+                                        ) {
+
+                                            val book: Book = Book(
+                                                hit.coverId.toString(),
+                                                hit.title,
+                                                hit.authorName?.firstOrNull(),
+                                                hit.firstPublicYear,
+                                                hit.getCoverImage("S")
+                                            )
+
+                                            val isSaved = saved.contains(book)
+                                            val isFavourite = favourites.contains(book)
+
+                                            AsyncImage(
+                                                model = hit.getCoverImage("S"),
+                                                contentDescription = "Cover Image",
+                                                contentScale = ContentScale.Fit,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+
+                                            IconButton(
+                                                onClick = {
+                                                    if (isSaved) {
+                                                        vm.removeSavedBook(book)
+                                                        vm.deleteBookLocal(book)
+                                                    } else {
+                                                        vm.addSavedBook(book)
+                                                        vm.saveBookLocal(book)
+                                                    }
+                                                },
+                                                modifier = Modifier.align(Alignment.TopStart)
+                                                    .size(iconSize)
+                                            ) {
+                                                Icon(
+                                                    painter = if (isSaved) painterResource(R.drawable.bookmark_icon) else painterResource(
+                                                        R.drawable.bookmark_border_icon
+                                                    ),
+                                                    contentDescription = "Favourite Button"
+                                                )
+                                            }
+
+                                            IconButton(
+                                                onClick = {
+                                                    if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(
+                                                        book
+                                                    )
+                                                },
+                                                modifier = Modifier.align(Alignment.TopEnd)
+                                                    .size(iconSize)
+                                            ) {
+                                                Icon(
+                                                    painter = if (isFavourite) painterResource(R.drawable.favourite_icon) else painterResource(
+                                                        R.drawable.favourite_outline_icon
+                                                    ),
+                                                    contentDescription = "Favourite Button"
+                                                )
+                                            }
+
+                                        }
+
+                                        Text(
+                                            text = "${hit.title ?: "No title"}",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .wrapContentHeight()
+                                                .align(Alignment.CenterHorizontally),
+                                            maxLines = 2,
+                                            fontSize = fontSize
+                                        )
+
+                                        Text(
+                                            text = "${hit.authorName?.firstOrNull() ?: "No title"}",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .wrapContentHeight()
+                                                .align(Alignment.CenterHorizontally),
+                                            maxLines = 1,
+                                            fontSize = fontSize
+                                        )
+
+                                        Text(
+                                            text = "${hit.firstPublicYear ?: "No title"}",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .wrapContentHeight()
+                                                .align(Alignment.CenterHorizontally),
+                                            maxLines = 1,
+                                            fontSize = fontSize
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        LazyVerticalGrid(
+                            state = gridState,
+                            columns = GridCells.Fixed(2),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            items(state.results) { hit ->
+                                val book = Book(
+                                    id = hit.coverId.toString(),
+                                    author = hit.authorName?.firstOrNull(),
+                                    title = hit.title,
+                                    year = hit.firstPublicYear,
+                                    image = hit.getCoverImage("S")
                                 )
-                            ) {
-                                Column(Modifier.fillMaxSize()) {
 
-                                    Box(
-                                        modifier = Modifier.weight(boxSize)
-                                    ) {
+                                val isSaved = saved.contains(book)
+                                val isFavourite = favourites.contains(book)
 
-                                        val book: Book = Book(hit.coverId.toString(), hit.title, hit.authorName?.firstOrNull(), hit.firstPublicYear,hit.getCoverImage("S"))
-
-                                        val isSaved = saved.contains(book)
-                                        val isFavourite = favourites.contains(book)
-
+                                Card(
+                                    Modifier
+                                        .aspectRatio(cardRatio)
+                                        .wrapContentHeight(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.background
+                                    )
+                                ){
+                                    Column(Modifier.fillMaxSize()) {
                                         AsyncImage(
                                             model = hit.getCoverImage("S"),
                                             contentDescription = "Cover Image",
@@ -109,68 +237,64 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                             modifier = Modifier.fillMaxSize()
                                         )
 
-                                        IconButton(
-                                            onClick = {
-                                                if (isSaved) {
-                                                    vm.removeSavedBook(book)
-                                                    vm.deleteBookLocal(book)
-                                                } else {
-                                                    vm.addSavedBook(book)
-                                                    vm.saveBookLocal(book)
-                                                }
-                                            },
-                                            modifier = Modifier.align(Alignment.TopStart).size(iconSize)
-                                        ) {
-                                            Icon(
-                                                painter = if (isSaved) painterResource(R.drawable.bookmark_icon) else painterResource(R.drawable.bookmark_border_icon),
-                                                contentDescription = "Favourite Button"
-                                            )
+                                        Box (
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(180.dp)
+                                        ){
+                                            IconButton(
+                                                onClick = {
+                                                    if (isSaved) {
+                                                        vm.removeSavedBook(book)
+                                                        vm.deleteBookLocal(book)
+                                                    } else {
+                                                        vm.addSavedBook(book)
+                                                        vm.saveBookLocal(book)
+                                                    }
+                                                },
+                                                modifier = Modifier
+                                                    .align(Alignment.TopStart)
+                                                    .size(iconSize)
+                                            ) {
+                                                Icon(
+                                                    painter = if (isSaved) painterResource(R.drawable.bookmark_icon)
+                                                    else painterResource(R.drawable.bookmark_border_icon),
+                                                    contentDescription = "Save"
+                                                )
+                                            }
                                         }
 
-                                        IconButton(
-                                            onClick = { if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(book) },
-                                            modifier = Modifier.align(Alignment.TopEnd).size(iconSize)
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(180.dp)
                                         ) {
-                                            Icon(
-                                                painter = if (isFavourite) painterResource(R.drawable.favourite_icon) else painterResource(R.drawable.favourite_outline_icon),
-                                                contentDescription = "Favourite Button"
-                                            )
+                                            IconButton(
+                                                onClick = {
+                                                    if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(
+                                                        book
+                                                    )
+                                                },
+                                                modifier = Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .size(iconSize)
+                                            ) {
+                                                Icon(
+                                                    painter = if (isFavourite) painterResource(R.drawable.favourite_icon)
+                                                    else painterResource(R.drawable.favourite_outline_icon),
+                                                    contentDescription = "Favourite"
+                                                )
+                                            }
                                         }
 
+                                        Text(book.title ?: "No title", fontSize = fontSize)
+                                        Text(book.author ?: "No author", fontSize = fontSize)
+                                        Text(book.year.toString() ?: "No year", fontSize = fontSize)
                                     }
-
-                                    Text(
-                                        text = "${hit.title ?: "No title"}",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentHeight()
-                                            .align(Alignment.CenterHorizontally),
-                                        maxLines = 2,
-                                        fontSize = fontSize
-                                    )
-
-                                    Text(
-                                        text = "${hit.authorName?.firstOrNull() ?: "No title"}",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentHeight()
-                                            .align(Alignment.CenterHorizontally),
-                                        maxLines = 1,
-                                        fontSize = fontSize
-                                    )
-
-                                    Text(
-                                        text = "${hit.firstPublicYear ?: "No title"}",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .wrapContentHeight()
-                                            .align(Alignment.CenterHorizontally),
-                                        maxLines = 1,
-                                        fontSize = fontSize
-                                    )
                                 }
                             }
                         }
+
                     }
                 }
             }

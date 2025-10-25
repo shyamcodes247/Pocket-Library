@@ -47,6 +47,8 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation(libs.androidx.foundation)
 
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
     val moshi_version = "1.15.1"
 
     val room_version = "2.7.2"
