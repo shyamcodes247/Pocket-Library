@@ -53,7 +53,6 @@ import com.google.firebase.firestore.firestore
 @Composable
 fun BookList(state: UiState, vm: BookViewModel) {
     val saved by vm.saved.collectAsState()
-    val favourites by vm.favourites.collectAsState()
 
     BoxWithConstraints(
         Modifier
@@ -111,7 +110,6 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                         val book: Book = Book(hit.coverId.toString(), hit.authorName?.firstOrNull(), hit.title, hit.firstPublicYear,hit.getCoverImage("S"))
 
                                         val isSaved = saved.contains(book)
-                                        val isFavourite = favourites.contains(book)
 
                                         AsyncImage(
                                             model = hit.getCoverImage("S"),
@@ -129,17 +127,6 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                 contentDescription = "Favourite Button"
                                             )
                                         }
-
-                                        IconButton(
-                                            onClick = { if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(book) },
-                                            modifier = Modifier.align(Alignment.TopEnd).size(iconSize)
-                                        ) {
-                                            Icon(
-                                                painter = if (isFavourite) painterResource(R.drawable.favourite_icon) else painterResource(R.drawable.favourite_outline_icon),
-                                                contentDescription = "Favourite Button"
-                                            )
-                                        }
-
                                     }
 
                                     Text(
@@ -194,7 +181,6 @@ fun BookListPreview() {
 fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, iconSize: Dp) {
     // Gets list of favourites and saved from view model
     val saved by vm.saved.collectAsState()
-    val favourites by vm.favourites.collectAsState()
 
     Row(
         modifier = Modifier.fillMaxSize()
@@ -231,7 +217,6 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                             ) {
 
                                 val isSaved = saved.contains(book)
-                                val isFavourite = favourites.contains(book)
 
                                 AsyncImage(
                                     model = hit.getCoverImage("S"),
@@ -253,21 +238,6 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                                         contentDescription = "Favourite Button"
                                     )
                                 }
-
-                                IconButton(
-                                    onClick = {
-                                        if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(book)
-                                    },
-                                    modifier = Modifier.align(Alignment.TopEnd).size(iconSize)
-                                ) {
-                                    Icon(
-                                        painter = if (isFavourite) painterResource(R.drawable.favourite_icon) else painterResource(
-                                            R.drawable.favourite_outline_icon
-                                        ),
-                                        contentDescription = "Favourite Button"
-                                    )
-                                }
-
                             }
 
                             Box(
