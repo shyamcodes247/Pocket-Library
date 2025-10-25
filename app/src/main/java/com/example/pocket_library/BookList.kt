@@ -20,6 +20,8 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.magnifier
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -44,14 +46,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.CardDefaults
 import android.content.Intent
-import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun BookList(state: UiState, vm: BookViewModel) {
     val saved by vm.saved.collectAsState()
-    val favourites by vm.favourites.collectAsState()
     val context = LocalContext.current
 
     BoxWithConstraints(
@@ -70,28 +72,29 @@ fun BookList(state: UiState, vm: BookViewModel) {
         val listState = rememberLazyListState()
         val gridState = rememberLazyGridState()
 
-        if (isTablet) {
-            tabletBookList(state, vm, cardRatio, fontSize, iconSize)
-        } else {
-            when {
-                state.loading -> {
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-                }
 
-                state.error != null -> {
-                    Text(
-                        text = state.error ?: "Error",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
+        when {
+            state.loading -> {
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
+            }
 
-                state.results.isEmpty() && state.query.isNotEmpty() -> {
-                    Text("No results", modifier = Modifier.align(Alignment.Center))
-                }
+            state.error != null -> {
+                Text(
+                    text = state.error ?: "Error",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
 
-                else -> {
-                    if (isPortrait) {
+            state.results.isEmpty() && state.query.isNotEmpty() -> {
+                Text("No results", modifier = Modifier.align(Alignment.Center))
+            }
+
+            else -> {
+                if (isPortrait) {
+                    if (isTablet) {
+                        tabletBookList(state, vm, cardRatio, fontSize, iconSize)
+                    } else {
                         LazyColumn(
                             state = listState,
                             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -125,7 +128,6 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                             )
 
                                             val isSaved = saved.contains(book)
-                                            val isFavourite = favourites.contains(book)
 
                                             AsyncImage(
                                                 model = hit.getCoverImage("L"),
@@ -138,10 +140,8 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                 onClick = {
                                                     if (isSaved) {
                                                         vm.removeSavedBook(book)
-                                                        vm.deleteBookLocal(book)
                                                     } else {
                                                         vm.addSavedBook(book)
-                                                        vm.saveBookLocal(book)
                                                     }
                                                 },
                                                 modifier = Modifier.align(Alignment.TopStart)
@@ -157,31 +157,20 @@ fun BookList(state: UiState, vm: BookViewModel) {
 
                                             IconButton(
                                                 onClick = {
-                                                    if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(
-                                                        book
-                                                    )
-                                                },
-                                                modifier = Modifier.align(Alignment.TopEnd)
-                                                    .size(iconSize)
-                                            ) {
-                                                Icon(
-                                                    painter = if (isFavourite) painterResource(R.drawable.favourite_icon) else painterResource(
-                                                        R.drawable.favourite_outline_icon
-                                                    ),
-                                                    contentDescription = "Favourite Button"
-                                                )
-                                            }
-
-                                            IconButton(
-                                                onClick = {
-                                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                                        type = "text/plain"
-                                                        putExtra(
-                                                            Intent.EXTRA_TEXT,
-                                                            "Check out this book: ${book.title ?: "Unknown Title"} by ${book.author ?: "Unknown Author"}."
+                                                    val shareIntent =
+                                                        Intent(Intent.ACTION_SEND).apply {
+                                                            type = "text/plain"
+                                                            putExtra(
+                                                                Intent.EXTRA_TEXT,
+                                                                "Check out this book: ${book.title ?: "Unknown Title"} by ${book.author ?: "Unknown Author"}."
+                                                            )
+                                                        }
+                                                    context.startActivity(
+                                                        Intent.createChooser(
+                                                            shareIntent,
+                                                            "Share book via..."
                                                         )
-                                                    }
-                                                    context.startActivity(Intent.createChooser(shareIntent, "Share book via..."))
+                                                    )
                                                 },
                                                 modifier = Modifier
                                                     .align(Alignment.BottomEnd)
@@ -229,102 +218,72 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                 }
                             }
                         }
-                    } else {
-                        LazyVerticalGrid(
-                            state = gridState,
-                            columns = GridCells.Fixed(2),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 16.dp)
-                        ) {
-                            items(state.results) { hit ->
-                                val book = Book(
-                                    id = hit.coverId.toString(),
-                                    author = hit.authorName?.firstOrNull(),
-                                    title = hit.title,
-                                    year = hit.firstPublicYear,
-                                    image = hit.getCoverImage("L")
-                                )
+                    }
+                } else {
+                    LazyVerticalGrid(
+                        state = gridState,
+                        columns = GridCells.Fixed(2),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = 16.dp)
+                    ) {
+                        items(state.results) { hit ->
+                            val book = Book(
+                                id = hit.coverId.toString(),
+                                author = hit.authorName?.firstOrNull(),
+                                title = hit.title,
+                                year = hit.firstPublicYear,
+                                image = hit.getCoverImage("L")
+                            )
 
-                                val isSaved = saved.contains(book)
-                                val isFavourite = favourites.contains(book)
+                            val isSaved = saved.contains(book)
 
-                                Card(
-                                    Modifier
-                                        .aspectRatio(cardRatio)
-                                        .wrapContentHeight(),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.background
-                                    )
-                                ){
-                                    Column(Modifier.fillMaxSize()) {
+                            Card(
+                                modifier = Modifier.wrapContentHeight(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.background)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentAlignment = Alignment.TopStart
+                                    ) {
                                         AsyncImage(
                                             model = hit.getCoverImage("L"),
                                             contentDescription = "Cover Image",
                                             contentScale = ContentScale.Fit,
-                                            modifier = Modifier.fillMaxSize()
+                                            modifier = Modifier.fillMaxWidth()
+                                                .wrapContentHeight()
                                         )
-
-                                        Box (
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(180.dp)
-                                        ){
-                                            IconButton(
-                                                onClick = {
-                                                    if (isSaved) {
-                                                        vm.removeSavedBook(book)
-                                                        vm.deleteBookLocal(book)
-                                                    } else {
-                                                        vm.addSavedBook(book)
-                                                        vm.saveBookLocal(book)
-                                                    }
-                                                },
-                                                modifier = Modifier
-                                                    .align(Alignment.TopStart)
-                                                    .size(iconSize)
-                                            ) {
-                                                Icon(
-                                                    painter = if (isSaved) painterResource(R.drawable.bookmark_icon)
-                                                    else painterResource(R.drawable.bookmark_border_icon),
-                                                    contentDescription = "Save"
+                                        IconButton(
+                                            onClick = {
+                                                if (isSaved) vm.removeSavedBook(book) else vm.addSavedBook(
+                                                    book
                                                 )
-                                            }
-                                        }
-
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(180.dp)
+                                            },
+                                            modifier = Modifier.padding(4.dp).size(iconSize)
+                                                .align(Alignment.TopStart)
                                         ) {
-                                            IconButton(
-                                                onClick = {
-                                                    if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(
-                                                        book
-                                                    )
-                                                },
-                                                modifier = Modifier
-                                                    .align(Alignment.TopEnd)
-                                                    .size(iconSize)
-                                            ) {
-                                                Icon(
-                                                    painter = if (isFavourite) painterResource(R.drawable.favourite_icon)
-                                                    else painterResource(R.drawable.favourite_outline_icon),
-                                                    contentDescription = "Favourite"
-                                                )
-                                            }
+                                            Icon(
+                                                painter = if (isSaved) painterResource(R.drawable.bookmark_icon) else painterResource(R.drawable.bookmark_border_icon),
+                                                contentDescription = "Save"
+                                            )
                                         }
-
-                                        Text(book.title ?: "No title", fontSize = fontSize)
-                                        Text(book.author ?: "No author", fontSize = fontSize)
-                                        Text(book.year.toString() ?: "No year", fontSize = fontSize)
                                     }
+
+                                    Text(text = book.title ?: "No title",  fontSize = fontSize, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    Text(text = book.author ?: "No author", fontSize = fontSize, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(text = book.year?.toString() ?: "No year", fontSize = fontSize, maxLines = 1)
                                 }
                             }
                         }
-
                     }
+
                 }
             }
         }
@@ -339,10 +298,11 @@ fun BookListPreview() {
     BookList(state, vm)
 }
 
+// Compose function for view on tablets
 @Composable
 fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, iconSize: Dp) {
+    // Gets list of favourites and saved from view model
     val saved by vm.saved.collectAsState()
-    val favourites by vm.favourites.collectAsState()
 
     Row(
         modifier = Modifier.fillMaxSize()
@@ -379,7 +339,6 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                             ) {
 
                                 val isSaved = saved.contains(book)
-                                val isFavourite = favourites.contains(book)
 
                                 AsyncImage(
                                     model = hit.getCoverImage("L"),
@@ -401,21 +360,6 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                                         contentDescription = "Favourite Button"
                                     )
                                 }
-
-                                IconButton(
-                                    onClick = {
-                                        if (isFavourite) vm.removeFavourite(book) else vm.addFavourite(book)
-                                    },
-                                    modifier = Modifier.align(Alignment.TopEnd).size(iconSize)
-                                ) {
-                                    Icon(
-                                        painter = if (isFavourite) painterResource(R.drawable.favourite_icon) else painterResource(
-                                            R.drawable.favourite_outline_icon
-                                        ),
-                                        contentDescription = "Favourite Button"
-                                    )
-                                }
-
                             }
 
                             Box(

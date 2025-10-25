@@ -27,15 +27,9 @@ data class UiState(
     val results: List<Hit> = emptyList()
 )
 
-//data class Book(
-//    var id: String? = " ",
-//    val author: String? = null,
-//    val title: String? = null,
-//    val year: Int? = null,
-//    val image: String? = null
-//)
 
 class BookViewModel(application: Application) : AndroidViewModel(application) {
+    // Initialising firestore
     private val db = Firebase.firestore
     private val context = getApplication<Application>().applicationContext
     private val _state = MutableStateFlow(UiState())
@@ -48,12 +42,6 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
     ).build()
 
     private val bookDao = roomDb.bookDao()
-    private val _localBooks = MutableStateFlow<List<Book>>(emptyList())
-    val localBooks: StateFlow<List<Book>> = _localBooks
-
-    private val _favourites = MutableStateFlow<List<Book>>(emptyList())
-
-    val favourites: StateFlow<List<Book>> = _favourites
 
     private val _saved = MutableStateFlow<List<Book>>(emptyList())
 
@@ -63,8 +51,12 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
 
     val selectedBook: StateFlow<Book?> = _selectedBook
 
+    private val _savedSelectBook = MutableStateFlow<Book?>(null)
+
+    val savedSelectBook: StateFlow<Book?> = _savedSelectBook
+
+
     init {
-        getFavourites()
         getSavedBooks()
         observeLocalBooks()
 
@@ -81,42 +73,10 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
     private fun observeLocalBooks() {
         viewModelScope.launch {
             bookDao.getAllBooks().collect { entities ->
-                _localBooks.value = entities.map {
+                _saved.value = entities.map {
                     Book(it.id.toString(), it.author, it.title, it.year, it.image)
                 }
             }
-        }
-    }
-
-    fun saveBookLocal(book: Book){
-        viewModelScope.launch {
-            val bookId = book.id?.toIntOrNull() ?: 0
-            bookDao.insert(
-                BookEntity(
-                    id = bookId,
-                    title = book.title,
-                    author = book.author,
-                    year = book.year,
-                    image = book.image
-                )
-            )
-        }
-    }
-
-    fun deleteBookLocal(book: Book){
-        viewModelScope.launch {
-            val bookId = book.id?.toIntOrNull() ?: 0
-            bookDao.delete(
-                BookEntity(
-                    id = bookId,
-                    title = book.title,
-                    author = book.author,
-                    year = book.year,
-                    image = book.image
-                )
-            )
-
-            _saved.value = _saved.value.filter {it.id != book.id}
         }
     }
 
@@ -133,12 +93,30 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                 )
             )
         }
+
+        db.collection("saved")
+            .document(book.id.toString())
+            .set(book)
+            .addOnSuccessListener {
+                Log.d("BookViewModel", "Saved book successfully updated!")
+            }
+            .addOnFailureListener { e ->
+                Log.w("BookViewModel", "Error updating book", e)
+            }
+
+        val index = _saved.value.indexOf(book)
+        if (index  != -1) {
+            _saved.value = _saved.value.toMutableList().apply {
+                this[index] = book
+            }
+        }
+
     }
 
     fun searchLocal(query: String){
         viewModelScope.launch {
             bookDao.searchBooks(query).collect { entities ->
-                _localBooks.value = entities.map {
+                _saved.value = entities.map {
                     Book(it.id.toString(), it.author, it.title, it.year, it.image)
                 }
             }
@@ -148,6 +126,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
     var screen by mutableStateOf(0)
     private var searchJob: Job? = null
 
+    // Searching functions for implementing searching for books
     fun updateQuery(q: String) {
         _state.value = _state.value.copy(query = q)
         viewModelScope.launch {
@@ -185,35 +164,7 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Functions for favouriting books
-    fun addFavourite(book: Book) {
-        db.collection("favourites")
-            .add(book)
-            .addOnSuccessListener { bookRef ->
-                Log.d("BookViewModel", "Book added with id: ${bookRef.id}")
-                book.id = bookRef.id
-            }
-            .addOnFailureListener { e ->
-                Log.w("BookViewModel", "Error adding book ", e)
-            }
-
-        _favourites.value = _favourites.value + book
-    }
-
-    fun removeFavourite(book: Book) {
-        db.collection("favourites")
-            .document(book.id.toString())
-            .delete()
-            .addOnSuccessListener {
-                Log.d("BookViewModel", "Book successfully deleted!")
-            }
-            .addOnFailureListener { e ->
-                Log.w("BookViewModel", "Error deleting book", e)
-            }
-
-        _favourites.value = _favourites.value.filter {it.id != book.id}
-    }
-
+    // Function for saving a book (as saved) to firestore
     fun addSavedBook(book: Book) {
         db.collection("saved")
             .add(book)
@@ -225,9 +176,24 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
                 Log.w(TAG, "Error adding book ", e)
             }
 
+
+        viewModelScope.launch {
+            val bookId = book.id?.toIntOrNull() ?: 0
+            bookDao.insert(
+                BookEntity(
+                    id = bookId,
+                    title = book.title,
+                    author = book.author,
+                    year = book.year,
+                    image = book.image
+                )
+            )
+        }
+
         _saved.value = _saved.value + book
     }
 
+    // Removing saved book from firestore
     fun removeSavedBook(book: Book) {
         db.collection("saved")
             .document(book.id.toString())  // bookId is the Firestore document ID
@@ -240,20 +206,22 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
             }
 
         _saved.value = _saved.value.filter {it.id != book.id}
+
+        viewModelScope.launch {
+            val bookId = book.id?.toIntOrNull() ?: 0
+            bookDao.delete(
+                BookEntity(
+                    id = bookId,
+                    title = book.title,
+                    author = book.author,
+                    year = book.year,
+                    image = book.image
+                )
+            )
+        }
     }
 
-    fun getFavourites() {
-        db.collection("favourites")
-            .get()
-            .addOnSuccessListener { result ->
-                val list = result.documents.mapNotNull { it.toObject(Book::class.java) }
-                _favourites.value = list
-            }
-            .addOnFailureListener { e ->
-                Log.e("BookViewModel", "Error fetching books", e)
-            }
-    }
-
+    // Function for getting saved books to firestore
     fun getSavedBooks() {
         db.collection("saved")
             .get()
@@ -266,7 +234,13 @@ class BookViewModel(application: Application) : AndroidViewModel(application) {
             }
     }
 
+    // Function for selecting a book to view on tablet
     fun selectBook(book: Book) {
         _selectedBook.value = book
+    }
+
+    // Function for selecting a saved book to view on tablet
+    fun selectSavedBook(book: Book) {
+        _savedSelectBook.value = book
     }
 }

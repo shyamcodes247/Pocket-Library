@@ -33,9 +33,7 @@ class MainActivity : ComponentActivity() {
             PocketLibraryTheme {
                 if (vm.screen == 0) {
                     MainScreen(vm)
-                } else if (vm.screen == 1){
-                    FavouriteScreen(vm)
-                } else if (vm.screen == 2) {
+                } else if (vm.screen == 1) {
                     SavedScreen(vm)
                 }
             }
