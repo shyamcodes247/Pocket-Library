@@ -192,7 +192,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                 .wrapContentHeight()
                                                 .align(Alignment.CenterHorizontally),
                                             maxLines = 2,
-                                            fontSize = 20.sp
+                                            fontSize = fontSize
                                         )
 
                                         Text(
@@ -202,7 +202,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                 .wrapContentHeight()
                                                 .align(Alignment.CenterHorizontally),
                                             maxLines = 1,
-                                            fontSize = 16.sp
+                                            fontSize = fontSize
                                         )
 
                                         Text(

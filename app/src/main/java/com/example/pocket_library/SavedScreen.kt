@@ -247,7 +247,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                             onClick = { editDialogBook = book },
                                             modifier = Modifier
                                                 .align(Alignment.TopStart)
-                                                .padding(4.dp)
+                                                .padding(2.dp)
                                                 .size(iconSize)
                                         ) {
                                             Icon(
@@ -260,7 +260,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                             onClick = { vm.removeSavedBook(book) },
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
-                                                .padding(4.dp)
+                                                .padding(2.dp)
                                                 .size(iconSize)
                                         ) {
                                             Icon(
@@ -311,7 +311,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                             onClick = { contactPickerLauncher.launch(null) },
                                             modifier = Modifier
                                                 .align(Alignment.BottomEnd)
-                                                .padding(4.dp)
+                                                .padding(2.dp)
                                                 .size(iconSize)
                                         ) {
                                             Icon(
@@ -339,7 +339,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    contentPadding = PaddingValues(bottom = 16.dp, start = 16.dp, end = 16.dp)
                 ) {
                     items(saved) { book ->
                         Card(
@@ -352,11 +352,8 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                     .padding(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .aspectRatio(2f / 3f)
-                                        .heightIn(min = 140.dp),
+                                BoxWithConstraints(
+                                    modifier = Modifier.fillMaxWidth(),
                                     contentAlignment = Alignment.TopStart
                                 ) {
                                     val imageBitmap = remember(book.image) {
@@ -373,31 +370,29 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                         }
                                     }
 
-                                    val intrinsicRatio = remember(imageBitmap) {
-                                        imageBitmap?.let { bmp ->
-                                            // width / height
-                                            (bmp.width.toFloat() / bmp.height.toFloat())
-                                                .takeIf { it.isFinite() && it > 0f }
-                                        }
-                                    }
+                                    val maxW = maxWidth * 0.45f
+                                    val maxH = maxHeight * 0.6f
 
-                                    val imageModifier = Modifier
-                                        .fillMaxSize()
-                                        .let { m -> intrinsicRatio?.let { m.aspectRatio(it) } ?: m }
+                                    val imgModifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(maxW)
+                                        .heightIn(
+                                            max = maxH
+                                        )
 
                                     if (imageBitmap != null) {
                                         Image(
                                             bitmap = imageBitmap.asImageBitmap(),
                                             contentDescription = "Cover Image",
                                             contentScale = ContentScale.Fit,
-                                            modifier = imageModifier
+                                            modifier = imgModifier
                                         )
                                     } else {
                                         AsyncImage(
                                             model = book.image,
                                             contentDescription = "Cover Image",
                                             contentScale = ContentScale.Fit,
-                                            modifier = imageModifier
+                                            modifier = imgModifier
                                         )
                                     }
 
@@ -472,8 +467,8 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                     }
                                 }
 
-                                Text(book.title ?: "No title", fontSize = 20.sp)
-                                Text(book.author ?: "No Author", fontSize = 16.sp)
+                                Text(book.title ?: "No title", fontSize = 16.sp)
+                                Text(book.author ?: "No Author", fontSize = 14.sp)
                                 Text(book.year?.toString() ?: "No year", fontSize = fontSize)
                             }
                         }
