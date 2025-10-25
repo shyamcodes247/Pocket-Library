@@ -745,16 +745,43 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
                                 modifier = Modifier.weight(1f)
                             ) {
 
-                                AsyncImage(
-                                    model = hit.image,
-                                    contentDescription = "Cover Image",
-                                    contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 24.dp)
-                                        .fillMaxWidth()
-                                        .align(Alignment.Center)
-                                )
+                                val imageBitmap = remember(hit.image) {
+                                    try {
+                                        val decodedBytes =
+                                            Base64.decode(hit.image, Base64.DEFAULT)
+                                        BitmapFactory.decodeByteArray(
+                                            decodedBytes,
+                                            0,
+                                            decodedBytes.size
+                                        )
+                                    } catch (e: Exception) {
+                                        null
+                                    }
+                                }
 
+                                if (imageBitmap != null) {
+                                    Image(
+                                        bitmap = imageBitmap.asImageBitmap(),
+                                        contentDescription = "Cover Image",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    AsyncImage(
+                                        model = hit.image,
+                                        contentDescription = "Cover Image",
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier
+                                            .padding(
+                                                top = 8.dp,
+                                                start = 8.dp,
+                                                end = 8.dp,
+                                                bottom = 24.dp
+                                            )
+                                            .fillMaxWidth()
+                                            .align(Alignment.Center)
+                                    )
+                                }
                             }
 
 
@@ -847,16 +874,42 @@ fun tabletSavedScreen(vm: BookViewModel, cardRatio: Float, fontSize: TextUnit, i
         ) {
             val hit by vm.savedSelectBook.collectAsState()
             Column(Modifier.fillMaxSize()) {
-                AsyncImage(
-                    model = hit?.image,
-                    contentDescription = "Cover Image",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier
-                        .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 24.dp)
-                        .fillMaxWidth()
-                        .height(350.dp),
-                    alignment = Alignment.Center
-                )
+                val imageBitmap = remember(hit?.image) {
+                    try {
+                        val decodedBytes =
+                            Base64.decode(hit?.image, Base64.DEFAULT)
+                        BitmapFactory.decodeByteArray(
+                            decodedBytes,
+                            0,
+                            decodedBytes.size
+                        )
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                if (imageBitmap != null) {
+                    Image(
+                        bitmap = imageBitmap.asImageBitmap(),
+                        contentDescription = "Cover Image",
+                        modifier = Modifier
+                            .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 24.dp)
+                            .fillMaxWidth()
+                            .height(350.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    AsyncImage(
+                        model = hit?.image,
+                        contentDescription = "Cover Image",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 24.dp)
+                            .fillMaxWidth()
+                            .height(350.dp),
+                        alignment = Alignment.Center
+                    )
+                }
 
                 Text(
                     text = "${hit?.title ?: ""}",
