@@ -404,6 +404,15 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                                         maxLines = 1,
                                         fontSize = fontSize
                                     )
+                                    Text(
+                                        text = "${hit.firstPublicYear?.toString() ?: ""}",
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .wrapContentHeight()
+                                            .align(Alignment.CenterHorizontally),
+                                        maxLines = 1,
+                                        fontSize = fontSize
+                                    )
                                 }
                             }
 
