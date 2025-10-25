@@ -116,15 +116,34 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
     ) {
         var showDialog by remember { mutableStateOf(false) }
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+        OutlinedTextField(
+            value = query,
+            onValueChange = {
+                query = it
+                vm.searchLocal(query)
+            },
+            label = { Text("Search saved books...") },
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp)
+        )
+
         IconButton(
-            onClick = { showDialog = true },
-            modifier = Modifier.align(Alignment.End)
+            onClick = { showDialog = true }
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
                 contentDescription = "Add Book Button"
             )
         }
+    }
 
         if (showDialog) {
             dialogScreen(onDismissRequest = { showDialog = false }, vm)
@@ -139,18 +158,6 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                     editDialogBook = null
                 }
             )
-
-        OutlinedTextField(
-            value = query,
-            onValueChange = {
-                query = it
-                vm.searchLocal(query)
-            },
-            label = {Text("Search saved books...")},
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        )
 
         BoxWithConstraints(
             Modifier
@@ -296,8 +303,8 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                     }
                                 }
 
-                                Text(book.title ?: "No title", fontSize = fontSize)
-                                Text(book.author ?: "No Author", fontSize = fontSize)
+                                Text(book.title ?: "No title", fontSize = 20.sp)
+                                Text(book.author ?: "No Author", fontSize = 16.sp)
                                 Text(book.year?.toString() ?: "No year", fontSize = fontSize)
                             }
                         }
@@ -315,7 +322,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                     items(localBooks) { book ->
                         Card(
                             Modifier
-                                .aspectRatio(cardRatio)
+                                .aspectRatio(1f / 1.5f)
                                 .wrapContentHeight(),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.background
@@ -341,14 +348,23 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                         Image(
                                             bitmap = imageBitmap.asImageBitmap(),
                                             contentDescription = "Cover Image",
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
+                                            contentScale = ContentScale.Fit,
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                                .height(100.dp)
+                                                .fillMaxWidth()
                                         )
                                     } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(8.dp)
+                                                .height(100.dp)
+                                                .fillMaxWidth()
+                                        )
                                         AsyncImage(
                                             model = book.image,
                                             contentDescription = "Cover Image",
-                                            contentScale = ContentScale.Crop,
+                                            contentScale = ContentScale.Fit,
                                             modifier = Modifier.fillMaxSize()
                                         )
                                     }
@@ -424,8 +440,8 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                                     }
                                 }
 
-                                Text(book.title ?: "No title", fontSize = fontSize)
-                                Text(book.author ?: "No Author", fontSize = fontSize)
+                                Text(book.title ?: "No title", fontSize = 20.sp)
+                                Text(book.author ?: "No Author", fontSize = 16.sp)
                                 Text(book.year?.toString() ?: "No year", fontSize = fontSize)
                             }
                         }

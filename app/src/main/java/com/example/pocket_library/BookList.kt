@@ -43,11 +43,16 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.CardDefaults
+import android.content.Intent
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun BookList(state: UiState, vm: BookViewModel) {
     val saved by vm.saved.collectAsState()
     val favourites by vm.favourites.collectAsState()
+    val context = LocalContext.current
 
     BoxWithConstraints(
         Modifier
@@ -106,7 +111,9 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                     Column(Modifier.fillMaxSize()) {
 
                                         Box(
-                                            modifier = Modifier.weight(boxSize)
+                                            modifier = Modifier
+                                                .weight(boxSize)
+                                                .padding(top = 24.dp, bottom = 24.dp)
                                         ) {
 
                                             val book: Book = Book(
@@ -165,6 +172,28 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                 )
                                             }
 
+                                            IconButton(
+                                                onClick = {
+                                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                                        type = "text/plain"
+                                                        putExtra(
+                                                            Intent.EXTRA_TEXT,
+                                                            "Check out this book: ${book.title ?: "Unknown Title"} by ${book.author ?: "Unknown Author"}."
+                                                        )
+                                                    }
+                                                    context.startActivity(Intent.createChooser(shareIntent, "Share book via..."))
+                                                },
+                                                modifier = Modifier
+                                                    .align(Alignment.BottomEnd)
+                                                    .padding(4.dp)
+                                                    .size(iconSize)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Share,
+                                                    contentDescription = "Share Book"
+                                                )
+                                            }
+
                                         }
 
                                         Text(
@@ -174,7 +203,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                 .wrapContentHeight()
                                                 .align(Alignment.CenterHorizontally),
                                             maxLines = 2,
-                                            fontSize = fontSize
+                                            fontSize = 20.sp
                                         )
 
                                         Text(
@@ -184,7 +213,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                 .wrapContentHeight()
                                                 .align(Alignment.CenterHorizontally),
                                             maxLines = 1,
-                                            fontSize = fontSize
+                                            fontSize = 16.sp
                                         )
 
                                         Text(
