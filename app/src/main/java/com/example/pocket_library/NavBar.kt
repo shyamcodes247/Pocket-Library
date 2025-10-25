@@ -53,18 +53,7 @@ fun NavBar(modifier: Modifier = Modifier, vm: BookViewModel = viewModel()) {
             modifier = Modifier.padding(8.dp)
         ) {
             Icon(
-                painter = if (vm.screen == 1) painterResource(R.drawable.favourite_icon) else painterResource(R.drawable.favourite_outline_icon) ,
-                contentDescription = "Favourite Button"
-            )
-        }
-
-        Button(
-            onClick = { vm.screen = 2 },
-            colors = ButtonDefaults.buttonColors(Color.LightGray),
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Icon(
-                painter = if (vm.screen == 2) painterResource(R.drawable.bookmark_icon) else painterResource(R.drawable.bookmark_border_icon),
+                painter = if (vm.screen == 1) painterResource(R.drawable.bookmark_icon) else painterResource(R.drawable.bookmark_border_icon),
                 contentDescription = "Favourite Button"
             )
         }

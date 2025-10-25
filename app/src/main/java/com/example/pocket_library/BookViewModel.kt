@@ -37,10 +37,6 @@ class BookViewModel : ViewModel() {
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
-    private val _favourites = MutableStateFlow<List<Book>>(emptyList())
-
-    val favourites: StateFlow<List<Book>> = _favourites
-
     private val _saved = MutableStateFlow<List<Book>>(emptyList())
 
     val saved: StateFlow<List<Book>> = _saved
@@ -49,17 +45,12 @@ class BookViewModel : ViewModel() {
 
     val selectedBook: StateFlow<Book?> = _selectedBook
 
-    private val _favouriteSelectBook = MutableStateFlow<Book?>(null)
-
-    val favouriteSelectBook: StateFlow<Book?> = _favouriteSelectBook
-
     private val _savedSelectBook = MutableStateFlow<Book?>(null)
 
     val savedSelectBook: StateFlow<Book?> = _savedSelectBook
 
 
     init {
-        getFavourites()
         getSavedBooks()
     }
 
@@ -101,36 +92,6 @@ class BookViewModel : ViewModel() {
         }
     }
 
-    // Functions for favouriting books
-    fun addFavourite(book: Book) {
-        db.collection("favourites")
-            .add(book)
-            .addOnSuccessListener { bookRef ->
-                Log.d("BookViewModel", "Book added with id: ${bookRef.id}")
-                book.id = bookRef.id
-            }
-            .addOnFailureListener { e ->
-                Log.w("BookViewModel", "Error adding book ", e)
-            }
-
-        _favourites.value = _favourites.value + book
-    }
-
-    // Function for removing favourited book from firestore
-    fun removeFavourite(book: Book) {
-        db.collection("favourites")
-            .document(book.id.toString())
-            .delete()
-            .addOnSuccessListener {
-                Log.d("BookViewModel", "Book successfully deleted!")
-            }
-            .addOnFailureListener { e ->
-                Log.w("BookViewModel", "Error deleting book", e)
-            }
-
-        _favourites.value = _favourites.value.filter {it.id != book.id}
-    }
-
     // Function for saving a book (as saved) to firestore
     fun addSavedBook(book: Book) {
         db.collection("saved")
@@ -161,19 +122,6 @@ class BookViewModel : ViewModel() {
         _saved.value = _saved.value.filter {it.id != book.id}
     }
 
-    // Function for getting favourited books to firestore
-    fun getFavourites() {
-        db.collection("favourites")
-            .get()
-            .addOnSuccessListener { result ->
-                val list = result.documents.mapNotNull { it.toObject(Book::class.java) }
-                _favourites.value = list
-            }
-            .addOnFailureListener { e ->
-                Log.e("BookViewModel", "Error fetching books", e)
-            }
-    }
-
     // Function for getting saved books to firestore
     fun getSavedBooks() {
         db.collection("saved")
@@ -190,11 +138,6 @@ class BookViewModel : ViewModel() {
     // Function for selecting a book to view on tablet
     fun selectBook(book: Book) {
         _selectedBook.value = book
-    }
-
-    // Function for selecting a favourite book to view on tablet
-    fun selectFavouriteBook(book: Book) {
-        _favouriteSelectBook.value = book
     }
 
     // Function for selecting a saved book to view on tablet
