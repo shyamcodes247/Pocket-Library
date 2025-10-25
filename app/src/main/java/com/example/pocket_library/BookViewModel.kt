@@ -4,17 +4,21 @@ import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pocket_library.local.AppDatabase
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import com.example.pocket_library.local.BookEntity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import androidx.lifecycle.AndroidViewModel
+import android.app.Application
+import androidx.room.Room
+
 
 data class UiState(
     val query: String = "",
@@ -23,19 +27,21 @@ data class UiState(
     val results: List<Hit> = emptyList()
 )
 
-data class Book(
-    var id: String? = " ",
-    val author: String? = null,
-    val title: String? = null,
-    val year: Int? = null,
-    val image: String? = null
-)
 
-class BookViewModel : ViewModel() {
+class BookViewModel(application: Application) : AndroidViewModel(application) {
     // Initialising firestore
     private val db = Firebase.firestore
+    private val context = getApplication<Application>().applicationContext
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
+
+    private val roomDb = Room.databaseBuilder(
+        context,
+        AppDatabase::class.java,
+        "pocket_library_database"
+    ).build()
+
+    private val bookDao = roomDb.bookDao()
 
     private val _saved = MutableStateFlow<List<Book>>(emptyList())
 
@@ -52,6 +58,69 @@ class BookViewModel : ViewModel() {
 
     init {
         getSavedBooks()
+        observeLocalBooks()
+
+        viewModelScope.launch {
+            getLastQuery(context).collect { lastQ ->
+                if (lastQ.isNotEmpty()) {
+                    _state.value = _state.value.copy(query = lastQ)
+                    search()
+                }
+            }
+        }
+    }
+
+    private fun observeLocalBooks() {
+        viewModelScope.launch {
+            bookDao.getAllBooks().collect { entities ->
+                _saved.value = entities.map {
+                    Book(it.id.toString(), it.author, it.title, it.year, it.image)
+                }
+            }
+        }
+    }
+
+    fun updateBookLocal(book: Book) {
+        viewModelScope.launch {
+            val bookId = book.id?.toIntOrNull() ?: 0
+            bookDao.update(
+                BookEntity(
+                    id = bookId ?: 0,
+                    title = book.title ?: "",
+                    author = book.author ?: "",
+                    year = book.year ?: 0,
+                    image = book.image ?: ""
+                )
+            )
+        }
+
+        db.collection("saved")
+            .document(book.id.toString())
+            .set(book)
+            .addOnSuccessListener {
+                Log.d("BookViewModel", "Saved book successfully updated!")
+            }
+            .addOnFailureListener { e ->
+                Log.w("BookViewModel", "Error updating book", e)
+            }
+
+        val index = _saved.value.indexOf(book)
+        if (index  != -1) {
+            _saved.value = _saved.value.toMutableList().apply {
+                this[index] = book
+            }
+        }
+
+    }
+
+    fun searchLocal(query: String){
+        viewModelScope.launch {
+            bookDao.searchBooks(query).collect { entities ->
+                _saved.value = entities.map {
+                    Book(it.id.toString(), it.author, it.title, it.year, it.image)
+                }
+            }
+        }
     }
 
     var screen by mutableStateOf(0)
@@ -60,6 +129,9 @@ class BookViewModel : ViewModel() {
     // Searching functions for implementing searching for books
     fun updateQuery(q: String) {
         _state.value = _state.value.copy(query = q)
+        viewModelScope.launch {
+            saveLastQuery(context, q)
+        }
         // Simple debounce:
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
@@ -104,6 +176,20 @@ class BookViewModel : ViewModel() {
                 Log.w(TAG, "Error adding book ", e)
             }
 
+
+        viewModelScope.launch {
+            val bookId = book.id?.toIntOrNull() ?: 0
+            bookDao.insert(
+                BookEntity(
+                    id = bookId,
+                    title = book.title,
+                    author = book.author,
+                    year = book.year,
+                    image = book.image
+                )
+            )
+        }
+
         _saved.value = _saved.value + book
     }
 
@@ -120,6 +206,19 @@ class BookViewModel : ViewModel() {
             }
 
         _saved.value = _saved.value.filter {it.id != book.id}
+
+        viewModelScope.launch {
+            val bookId = book.id?.toIntOrNull() ?: 0
+            bookDao.delete(
+                BookEntity(
+                    id = bookId,
+                    title = book.title,
+                    author = book.author,
+                    year = book.year,
+                    image = book.image
+                )
+            )
+        }
     }
 
     // Function for getting saved books to firestore

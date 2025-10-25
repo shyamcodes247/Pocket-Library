@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.kapt")
     // Add the Google services Gradle plugin
     id("com.google.gms.google-services")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -46,7 +47,14 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     implementation(libs.androidx.foundation)
 
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
     val moshi_version = "1.15.1"
+
+    val room_version = "2.7.2"
+
+    implementation("androidx.room:room-runtime:${room_version}")
+    ksp("androidx.room:room-compiler:$room_version")
 
     implementation("com.squareup.retrofit2:retrofit:3.0.0")
     implementation("com.squareup.retrofit2:converter-moshi:3.0.0")
