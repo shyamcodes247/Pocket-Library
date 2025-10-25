@@ -38,7 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.Saver
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -70,9 +69,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import android.content.Context
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.lazy.items
 
 @Composable
 fun SavedScreen(vm: BookViewModel = viewModel()) {
@@ -84,6 +89,7 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
 
     LaunchedEffect(localBooks){
         if (localBooks.isNotEmpty()) {
+            delay(100)
             getScrollPosition(context).collect { (index, offset) ->
                 gridState.scrollToItem(index, offset)
             }
@@ -151,175 +157,282 @@ fun SavedScreen(vm: BookViewModel = viewModel()) {
                 .padding(16.dp, 0.dp)
                 .weight(1f)
         ) {
-            val cardRatio = if (maxWidth < 360.dp) 1f else 2f/3f
+            val cardRatio = if (maxWidth < 360.dp) 1f else 2f / 3f
             val fontSize = if (maxWidth < 360.dp) 10.sp else 12.sp
             val iconSize = if (maxWidth < 360.dp) 16.dp else 24.dp
             val boxSize = if (maxHeight < 600.dp) 3f else 4f
 
+            val configuration = LocalConfiguration.current
+            val isPortrait =
+                configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+
+            val listState = rememberLazyListState()
             val gridState = rememberLazyGridState()
 
-            LazyVerticalGrid(
-                state = gridState,
-                columns = GridCells.Adaptive(140.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(localBooks) { book ->
-                    Card(
-                        Modifier
-                            .aspectRatio(cardRatio),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.background
-                        )
-                    ) {
-                        Column(Modifier.fillMaxSize()) {
-
-                            Box(modifier = Modifier.weight(4f)) {
-
-                                val imageBitmap = remember(book.image) {
-                                    try {
-                                        val decodedBytes = Base64.decode(book.image, Base64.DEFAULT)
-                                        BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
-                                    } catch (e: Exception) {
-                                        null
+            if (isPortrait) {
+                LazyColumn(
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(items = localBooks) { book ->
+                        Card(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.background
+                            )
+                        ) {
+                            Column(Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(2f / 3f)
+                                        .padding(top = 24.dp, bottom = 24.dp)
+                                ) {
+                                    val imageBitmap = remember(book.image) {
+                                        try {
+                                            val decodedBytes =
+                                                Base64.decode(book.image, Base64.DEFAULT)
+                                            BitmapFactory.decodeByteArray(
+                                                decodedBytes,
+                                                0,
+                                                decodedBytes.size
+                                            )
+                                        } catch (e: Exception) {
+                                            null
+                                        }
                                     }
-                                }
 
-                                if (imageBitmap != null) {
-                                    Image(
-                                        bitmap = imageBitmap.asImageBitmap(),
-                                        contentDescription = "Cover Image",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    AsyncImage(
-                                        model = book.image,
-                                        contentDescription = "Cover Image",
-                                        contentScale = ContentScale.Fit,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = { editDialogBook = book },
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .padding(4.dp)
-                                        .size(iconSize)
-                                ){
-                                    Icon(
-                                        imageVector = Icons.Filled.Edit,
-                                        contentDescription = "Edit"
-                                    )
-                                }
-
-                                IconButton(
-                                    onClick = { vm.deleteBookLocal(book) },
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(4.dp)
-                                        .size(iconSize)
-                                ){
-                                    Icon(
-                                        imageVector = Icons.Filled.Delete,
-                                        contentDescription = "Delete"
-                                    )
-                                }
-
-                                val contactPickerLauncher = rememberLauncherForActivityResult(
-                                    contract = ActivityResultContracts.PickContact()
-                                ){ contactUri: Uri? ->
-                                    if (contactUri != null) {
-                                        val cursor = context.contentResolver.query(
-                                            contactUri,
-                                            arrayOf(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY),
-                                            null, null, null
+                                    if (imageBitmap != null) {
+                                        Image(
+                                            bitmap = imageBitmap.asImageBitmap(),
+                                            contentDescription = "Cover Image",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
                                         )
-                                        var contactName = "your friend"
-                                        cursor?.use {
-                                            if (it.moveToFirst()) {
-                                                contactName = it.getString(
-                                                    it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+                                    } else {
+                                        AsyncImage(
+                                            model = book.image,
+                                            contentDescription = "Cover Image",
+                                            contentScale = ContentScale.Fit,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = { editDialogBook = book },
+                                        modifier = Modifier
+                                            .align(Alignment.TopStart)
+                                            .padding(4.dp)
+                                            .size(iconSize)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Edit,
+                                            contentDescription = "Edit"
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = { vm.deleteBookLocal(book) },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(4.dp)
+                                            .size(iconSize)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Delete,
+                                            contentDescription = "Delete"
+                                        )
+                                    }
+
+                                    val contactPickerLauncher = rememberLauncherForActivityResult(
+                                        contract = ActivityResultContracts.PickContact()
+                                    ) { contactUri: Uri? ->
+                                        if (contactUri != null) {
+                                            val cursor = context.contentResolver.query(
+                                                contactUri,
+                                                arrayOf(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY),
+                                                null, null, null
+                                            )
+                                            var contactName = "your friend"
+                                            cursor?.use {
+                                                if (it.moveToFirst()) {
+                                                    contactName = it.getString(
+                                                        it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+                                                    )
+                                                }
+                                            }
+
+                                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(
+                                                    Intent.EXTRA_TEXT,
+                                                    "Hey $contactName, check out this book: ${book.author} by ${book.title}."
                                                 )
                                             }
+                                            context.startActivity(
+                                                Intent.createChooser(
+                                                    shareIntent,
+                                                    "Share book via..."
+                                                )
+                                            )
                                         }
+                                    }
 
-                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                            type = "text/plain"
-                                            putExtra(
-                                                Intent.EXTRA_TEXT,
-                                                "Hey $contactName, check out this book: ${book.author} by ${book.title}."
-                                            )
-                                        }
-                                        context.startActivity(
-                                            Intent.createChooser(
-                                                shareIntent,
-                                                "Share book via..."
-                                            )
+                                    IconButton(
+                                        onClick = { contactPickerLauncher.launch(null) },
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(4.dp)
+                                            .size(iconSize)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Share,
+                                            contentDescription = "Share Book"
                                         )
                                     }
                                 }
 
-                                IconButton(
-                                    onClick = { contactPickerLauncher.launch(null) },
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .padding(4.dp)
-                                        .size(iconSize)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Share,
-                                        contentDescription = "Share Book"
-                                    )
-                                }
+                                Text(book.title ?: "No title", fontSize = fontSize)
+                                Text(book.author ?: "No Author", fontSize = fontSize)
+                                Text(book.year?.toString() ?: "No year", fontSize = fontSize)
                             }
-
-
-                            Text(
-                                text = "${book.title ?: "No title"}",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterHorizontally),
-                                maxLines = 2,
-                                fontSize = fontSize
+                        }
+                    }
+                }
+            } else {
+                LazyVerticalGrid(
+                    state = gridState,
+                    columns = GridCells.Fixed(2),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(localBooks) { book ->
+                        Card(
+                            Modifier
+                                .aspectRatio(cardRatio)
+                                .wrapContentHeight(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.background
                             )
+                        ) {
+                            Column(Modifier.fillMaxSize()) {
+                                Box(modifier = Modifier.weight(4f)) {
+                                    val imageBitmap = remember(book.image) {
+                                        try {
+                                            val decodeBytes =
+                                                Base64.decode(book.image, Base64.DEFAULT)
+                                            BitmapFactory.decodeByteArray(
+                                                decodeBytes,
+                                                0,
+                                                decodeBytes.size
+                                            )
+                                        } catch (e: Exception) {
+                                            null
+                                        }
+                                    }
 
-                            Text(
-                                text = "${book.author ?: "No Author"}",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterHorizontally),
-                                maxLines = 1,
-                                fontSize = fontSize
-                            )
+                                    if (imageBitmap != null) {
+                                        Image(
+                                            bitmap = imageBitmap.asImageBitmap(),
+                                            contentDescription = "Cover Image",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        AsyncImage(
+                                            model = book.image,
+                                            contentDescription = "Cover Image",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
 
-                            Text(
-                                text = "${book.year ?: "No publish year"}",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight()
-                                    .align(Alignment.CenterHorizontally),
-                                maxLines = 1,
-                                fontSize = fontSize
-                            )
+                                    IconButton(
+                                        onClick = { editDialogBook = book },
+                                        modifier = Modifier
+                                            .align(Alignment.TopStart)
+                                            .padding(4.dp)
+                                            .size(iconSize)
+                                    ) {
+                                        Icon(Icons.Filled.Edit, contentDescription = "Edit")
+                                    }
 
-                            Row(
-                                Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
+                                    IconButton(
+                                        onClick = { vm.deleteBookLocal(book) },
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .padding(4.dp)
+                                            .size(iconSize)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Delete,
+                                            contentDescription = "Delete"
+                                        )
+                                    }
 
+                                    val contactPickerLauncher = rememberLauncherForActivityResult(
+                                        contract = ActivityResultContracts.PickContact()
+                                    ) { contactUri: Uri? ->
+                                        if (contactUri != null) {
+                                            val cursor = context.contentResolver.query(
+                                                contactUri,
+                                                arrayOf(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY),
+                                                null, null, null
+                                            )
+                                            var contactName = "your friend"
+                                            cursor?.use {
+                                                if (it.moveToFirst()) {
+                                                    contactName = it.getString(
+                                                        it.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME_PRIMARY)
+                                                    )
+                                                }
+                                            }
+
+                                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra(
+                                                    Intent.EXTRA_TEXT,
+                                                    "Hey $contactName, check out this book: ${book.author} by ${book.title}."
+                                                )
+                                            }
+                                            context.startActivity(
+                                                Intent.createChooser(
+                                                    shareIntent,
+                                                    "Share book via..."
+                                                )
+                                            )
+                                        }
+                                    }
+
+                                    IconButton(
+                                        onClick = { contactPickerLauncher.launch(null) },
+                                        modifier = Modifier
+                                            .align(Alignment.BottomEnd)
+                                            .padding(4.dp)
+                                            .size(iconSize)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Share,
+                                            contentDescription = "Share Book"
+                                        )
+                                    }
+                                }
+
+                                Text(book.title ?: "No title", fontSize = fontSize)
+                                Text(book.author ?: "No Author", fontSize = fontSize)
+                                Text(book.year?.toString() ?: "No year", fontSize = fontSize)
                             }
                         }
                     }
                 }
             }
         }
-
         NavBar(modifier = Modifier, vm)
     }
 }
@@ -526,4 +639,5 @@ fun dialogScreenPreview() {
     var showDialog = true
     dialogScreen(onDismissRequest = { showDialog = false}, vm = viewModel())
 }
+
 

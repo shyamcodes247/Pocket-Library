@@ -114,14 +114,14 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                                 hit.title,
                                                 hit.authorName?.firstOrNull(),
                                                 hit.firstPublicYear,
-                                                hit.getCoverImage("S")
+                                                hit.getCoverImage("L")
                                             )
 
                                             val isSaved = saved.contains(book)
                                             val isFavourite = favourites.contains(book)
 
                                             AsyncImage(
-                                                model = hit.getCoverImage("S"),
+                                                model = hit.getCoverImage("L"),
                                                 contentDescription = "Cover Image",
                                                 contentScale = ContentScale.Fit,
                                                 modifier = Modifier.fillMaxSize()
@@ -215,7 +215,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                     author = hit.authorName?.firstOrNull(),
                                     title = hit.title,
                                     year = hit.firstPublicYear,
-                                    image = hit.getCoverImage("S")
+                                    image = hit.getCoverImage("L")
                                 )
 
                                 val isSaved = saved.contains(book)
@@ -231,7 +231,7 @@ fun BookList(state: UiState, vm: BookViewModel) {
                                 ){
                                     Column(Modifier.fillMaxSize()) {
                                         AsyncImage(
-                                            model = hit.getCoverImage("S"),
+                                            model = hit.getCoverImage("L"),
                                             contentDescription = "Cover Image",
                                             contentScale = ContentScale.Fit,
                                             modifier = Modifier.fillMaxSize()
@@ -330,7 +330,7 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                         hit.authorName?.firstOrNull(),
                         hit.title,
                         hit.firstPublicYear,
-                        hit.getCoverImage("S")
+                        hit.getCoverImage("L")
                     )
 
 
@@ -353,7 +353,7 @@ fun tabletBookList(state: UiState, vm: BookViewModel, cardRatio: Float, fontSize
                                 val isFavourite = favourites.contains(book)
 
                                 AsyncImage(
-                                    model = hit.getCoverImage("S"),
+                                    model = hit.getCoverImage("L"),
                                     contentDescription = "Cover Image",
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier.fillMaxSize()
